@@ -50,7 +50,7 @@ jobs:
           sed -i '$a\RELEASE_KEY_PASSWORD=TVBoxOSC'         ./gradle.properties
       - name: Build Release With Gradle
         if: ${{ env.commit }}
-        working-directory: TVBoxOSC
+        working-directory: BearTV
         run: |
           chmod +x gradlew
           ./gradlew assemblerelease --build-cache --parallel --daemon --warning-mode all
