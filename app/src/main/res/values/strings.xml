@@ -13,7 +13,7 @@
     <string name="home_search">Search</string>
     <string name="home_push">Push</string>
     <string name="home_setting">Setting</string>
-    <string name="home_recent">Recent</string>
+    <string name="home_history">History</string>
     <string name="home_recommend">Recommend</string>
 
     <!-- Vod -->
@@ -54,6 +54,7 @@
     <string name="error_play_next">It\'s the last episode!</string>
     <string name="error_play_prev">It\'s the first episode!</string>
     <string name="error_play_parse">Unable to parse url</string>
+    <string name="error_play">Unsupported video format</string>
 
     <string-array name="select_thumbnail">
         <item>High</item>

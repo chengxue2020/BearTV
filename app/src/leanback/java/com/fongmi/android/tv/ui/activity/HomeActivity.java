@@ -1,5 +1,6 @@
 package com.fongmi.android.tv.ui.activity;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Handler;
@@ -46,12 +47,14 @@ import org.greenrobot.eventbus.ThreadMode;
 import java.util.ArrayList;
 import java.util.List;
 
-public class HomeActivity extends BaseActivity implements VodPresenter.OnClickListener, HistoryPresenter.OnClickListener {
+public class HomeActivity extends BaseActivity implements VodPresenter.OnClickListener, FuncPresenter.OnClickListener, HistoryPresenter.OnClickListener {
 
     private ActivityHomeBinding mBinding;
     private SiteViewModel mSiteViewModel;
-    private FuncPresenter mFuncPresenter;
     private ArrayObjectAdapter mAdapter;
+    private ArrayObjectAdapter mHistoryAdapter;
+    private HistoryPresenter mHistoryPresenter;
+    private FuncPresenter mFuncPresenter;
     private boolean mConfirmExit;
 
     public static void start(Activity activity) {
@@ -72,14 +75,15 @@ public class HomeActivity extends BaseActivity implements VodPresenter.OnClickLi
         setRecyclerView();
         setViewModel();
         setAdapter();
-        getRecent();
+        getHistory();
         getVideo();
     }
 
     @Override
     protected void initEvent() {
         EventBus.getDefault().register(this);
-        mFuncPresenter.setOnClickListener(this::onFuncClick);
+        mFuncPresenter.setOnClickListener(this);
+        mHistoryPresenter.setOnClickListener(this);
         mBinding.recycler.addOnChildViewHolderSelectedListener(new OnChildViewHolderSelectedListener() {
             @Override
             public void onChildViewHolderSelected(@NonNull RecyclerView parent, @Nullable RecyclerView.ViewHolder child, int position, int subposition) {
@@ -97,6 +101,7 @@ public class HomeActivity extends BaseActivity implements VodPresenter.OnClickLi
         selector.addPresenter(ListRow.class, new CustomRowPresenter(16), HistoryPresenter.class);
         mBinding.recycler.setVerticalSpacing(ResUtil.dp2px(16));
         mBinding.recycler.setAdapter(new ItemBridgeAdapter(mAdapter = new ArrayObjectAdapter(selector)));
+        mHistoryAdapter = new ArrayObjectAdapter(mHistoryPresenter = new HistoryPresenter(5));
     }
 
     private void setViewModel() {
@@ -110,7 +115,7 @@ public class HomeActivity extends BaseActivity implements VodPresenter.OnClickLi
     private void setAdapter() {
         mAdapter.add(R.string.app_name);
         mAdapter.add(getFuncRow());
-        mAdapter.add(R.string.home_recent);
+        mAdapter.add(R.string.home_history);
         mAdapter.add(R.string.home_recommend);
     }
 
@@ -142,20 +147,27 @@ public class HomeActivity extends BaseActivity implements VodPresenter.OnClickLi
         return new ListRow(adapter);
     }
 
-    private void getRecent() {
-        int recentIndex = getRecentIndex();
+    private void getHistory() {
+        int historyIndex = getHistoryIndex();
         int recommendIndex = getRecommendIndex();
-        if (recommendIndex - recentIndex == 2) mAdapter.removeItems(recentIndex, 1);
         List<History> items = AppDatabase.get().getHistoryDao().getAll();
         if (items.isEmpty()) return;
-        HistoryPresenter presenter = new HistoryPresenter(5);
-        ArrayObjectAdapter adapter = new ArrayObjectAdapter(presenter);
-        presenter.setOnClickListener(this);
-        adapter.addAll(0, items);
-        mAdapter.add(recentIndex, new ListRow(adapter));
+        if (recommendIndex - historyIndex != 2) mAdapter.add(historyIndex, new ListRow(mHistoryAdapter));
+        mHistoryAdapter.setItems(items, null);
     }
 
-    private void onFuncClick(Func item) {
+    private int getHistoryIndex() {
+        for (int i = 0; i < mAdapter.size(); i++) if (mAdapter.get(i).equals(R.string.home_history)) return i + 1;
+        return -1;
+    }
+
+    private int getRecommendIndex() {
+        for (int i = 0; i < mAdapter.size(); i++) if (mAdapter.get(i).equals(R.string.home_recommend)) return i + 1;
+        return -1;
+    }
+
+    @Override
+    public void onItemClick(Func item) {
         switch (item.getResId()) {
             case R.string.home_vod:
                 VodActivity.start(this, mSiteViewModel.getResult().getValue());
@@ -164,16 +176,6 @@ public class HomeActivity extends BaseActivity implements VodPresenter.OnClickLi
                 SettingActivity.start(this);
                 break;
         }
-    }
-
-    private int getRecentIndex() {
-        for (int i = 0; i < mAdapter.size(); i++) if (mAdapter.get(i).equals(R.string.home_recent)) return i + 1;
-        return -1;
-    }
-
-    private int getRecommendIndex() {
-        for (int i = 0; i < mAdapter.size(); i++) if (mAdapter.get(i).equals(R.string.home_recommend)) return i + 1;
-        return -1;
     }
 
     @Override
@@ -186,20 +188,40 @@ public class HomeActivity extends BaseActivity implements VodPresenter.OnClickLi
         DetailActivity.start(this, item.getSiteKey(), item.getVodId());
     }
 
+    @Override
+    public void onItemDelete(History item) {
+        mHistoryAdapter.remove(item);
+        AppDatabase.get().getHistoryDao().delete(item.getKey());
+        if (mHistoryAdapter.size() > 0) return;
+        mAdapter.removeItems(getHistoryIndex(), 1);
+        mHistoryPresenter.setDelete(false);
+    }
+
+    @SuppressLint("RestrictedApi")
+    @Override
+    public boolean onLongClick() {
+        mHistoryPresenter.setDelete(true);
+        mHistoryAdapter.notifyArrayItemRangeChanged(0, mHistoryAdapter.size());
+        return true;
+    }
+
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onAdapterChanged(RefreshEvent event) {
         if (event.getType() == RefreshEvent.Type.VIDEO) {
             getVideo();
         } else if (event.getType() == RefreshEvent.Type.IMAGE) {
             mAdapter.notifyArrayItemRangeChanged(getRecommendIndex(), mAdapter.size() - getRecommendIndex());
-        } else if (event.getType() == RefreshEvent.Type.RECENT) {
-            getRecent();
+        } else if (event.getType() == RefreshEvent.Type.HISTORY) {
+            getHistory();
         }
     }
 
     @Override
     public void onBackPressed() {
-        if (!mConfirmExit) {
+        if (mHistoryPresenter.isDelete()) {
+            mHistoryPresenter.setDelete(false);
+            mHistoryAdapter.notifyArrayItemRangeChanged(0, mHistoryAdapter.size());
+        } else if (!mConfirmExit) {
             mConfirmExit = true;
             Notify.show(R.string.app_exit);
             new Handler().postDelayed(() -> mConfirmExit = false, 1000);
