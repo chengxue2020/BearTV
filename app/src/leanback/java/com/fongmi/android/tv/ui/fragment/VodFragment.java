@@ -92,9 +92,8 @@ public class VodFragment extends Fragment implements CustomScroller.Callback, Vo
     private void setViewModel() {
         mSiteViewModel = new ViewModelProvider(this).get(SiteViewModel.class);
         mSiteViewModel.result.observe(getViewLifecycleOwner(), result -> {
-            mAdapter.remove("progress");
-            mScroller.endLoading(result == null || result.getList().isEmpty());
-            if (result != null) addVideo(result);
+            mScroller.endLoading(result.getList().isEmpty());
+            if (result.getList().size() > 0) addVideo(result);
         });
     }
 
@@ -125,7 +124,6 @@ public class VodFragment extends Fragment implements CustomScroller.Callback, Vo
         boolean clear = page.equals("1") && mAdapter.size() > mFilters.size();
         if (clear) mAdapter.removeItems(mFilters.size(), mAdapter.size() - mFilters.size());
         mSiteViewModel.categoryContent(getTypeId(), page, true, mExtend);
-        mAdapter.add("progress");
     }
 
     private void addVideo(Result result) {
@@ -146,6 +144,7 @@ public class VodFragment extends Fragment implements CustomScroller.Callback, Vo
 
     @Override
     public void onLoadMore(String page) {
+        mScroller.setLoading(true);
         getVideo(page);
     }
 
