@@ -8,10 +8,11 @@ android {
 
     defaultConfig {
         applicationId "com.fongmi.android.tv"
-        minSdk 19
+        minSdk 21
         targetSdk 32
         versionCode 1
         versionName "1.0.0"
+        multiDexEnabled true
     }
 
     productFlavors {
@@ -40,10 +41,17 @@ android {
         sourceCompatibility JavaVersion.VERSION_11
         targetCompatibility JavaVersion.VERSION_11
     }
+
+    android.applicationVariants.all { variant ->
+        variant.outputs.all { output ->
+            outputFileName = "${variant.productFlavors[0].name}.apk"
+        }
+    }
 }
 
 dependencies {
     implementation project(':catvod')
+    implementation 'androidx.multidex:multidex:2.0.1'
     implementation 'androidx.appcompat:appcompat:1.4.2'
     implementation 'androidx.appcompat:appcompat:1.4.2'
     implementation 'androidx.preference:preference:1.2.0'
