@@ -28,8 +28,8 @@ public class VodPresenter extends Presenter {
     private void setLayoutSize(int columns) {
         int space = ResUtil.dp2px(16) * (columns - 1) + ResUtil.dp2px(48);
         int base = ResUtil.getScreenWidthPx() - space;
-        width = (int) base / columns;
-        height = (int) (width / 0.75);
+        width = base / columns;
+        height = (int) (width / 0.75f);
     }
 
     @Override
