@@ -25,6 +25,7 @@ import com.fongmi.android.tv.bean.Vod;
 import com.fongmi.android.tv.databinding.ActivityHomeBinding;
 import com.fongmi.android.tv.db.AppDatabase;
 import com.fongmi.android.tv.event.RefreshEvent;
+import com.fongmi.android.tv.event.ServerEvent;
 import com.fongmi.android.tv.model.SiteViewModel;
 import com.fongmi.android.tv.player.Players;
 import com.fongmi.android.tv.server.Server;
@@ -173,6 +174,9 @@ public class HomeActivity extends BaseActivity implements VodPresenter.OnClickLi
             case R.string.home_vod:
                 VodActivity.start(this, mSiteViewModel.getResult().getValue());
                 break;
+            case R.string.home_push:
+                PushActivity.start(this);
+                break;
             case R.string.home_setting:
                 SettingActivity.start(this);
                 break;
@@ -207,7 +211,7 @@ public class HomeActivity extends BaseActivity implements VodPresenter.OnClickLi
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onAdapterChanged(RefreshEvent event) {
+    public void onRefreshEvent(RefreshEvent event) {
         if (event.getType() == RefreshEvent.Type.VIDEO) {
             getVideo();
         } else if (event.getType() == RefreshEvent.Type.IMAGE) {
@@ -215,6 +219,12 @@ public class HomeActivity extends BaseActivity implements VodPresenter.OnClickLi
         } else if (event.getType() == RefreshEvent.Type.HISTORY) {
             getHistory();
         }
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onServerEvent(ServerEvent event) {
+        if (event.getType() != ServerEvent.Type.PUSH || ApiConfig.get().getSite("push_agent") == null) return;
+        DetailActivity.start(this, "push_agent", event.getText());
     }
 
     @Override

@@ -300,12 +300,14 @@ public class DetailActivity extends BaseActivity implements KeyDown.Listener {
 
     private void updateHistory() {
         History history = AppDatabase.get().getHistoryDao().find(getHistoryKey());
-        history.setDuration(Players.get().getCurrentPosition());
-        AppDatabase.get().getHistoryDao().update(history);
+        if (history != null) {
+            history.setDuration(Players.get().getCurrentPosition());
+            AppDatabase.get().getHistoryDao().update(history);
+        }
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onPlaybackStateChanged(PlayerEvent event) {
+    public void onPlayerEvent(PlayerEvent event) {
         mBinding.progress.getRoot().setVisibility(event.getState() == Player.STATE_BUFFERING ? View.VISIBLE : View.GONE);
         if (event.getState() == Player.STATE_ENDED) onNext();
         Notify.show(event.getMsg());
