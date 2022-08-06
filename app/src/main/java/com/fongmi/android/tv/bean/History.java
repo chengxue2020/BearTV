@@ -55,7 +55,7 @@ public class History {
     }
 
     public String getVodRemarks() {
-        return vodRemarks;
+        return vodRemarks == null ? "" : vodRemarks;
     }
 
     public void setVodRemarks(String vodRemarks) {
@@ -63,7 +63,7 @@ public class History {
     }
 
     public String getEpisodeUrl() {
-        return episodeUrl;
+        return episodeUrl == null ? "" : episodeUrl;
     }
 
     public void setEpisodeUrl(String episodeUrl) {
