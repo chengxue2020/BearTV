@@ -49,9 +49,9 @@ import java.util.List;
 
 public class DetailActivity extends BaseActivity implements KeyDown.Listener {
 
+    private ActivityDetailBinding mBinding;
     private ViewControllerBottomBinding mControl;
     private ViewGroup.LayoutParams mFrameParams;
-    private ActivityDetailBinding mBinding;
     private ArrayObjectAdapter mFlagAdapter;
     private ArrayObjectAdapter mGroupAdapter;
     private ArrayObjectAdapter mEpisodeAdapter;
@@ -309,6 +309,14 @@ public class DetailActivity extends BaseActivity implements KeyDown.Listener {
         }
     }
 
+    private final Runnable mHideCenter = new Runnable() {
+        @Override
+        public void run() {
+            mBinding.center.action.setImageResource(R.drawable.ic_play);
+            mBinding.center.getRoot().setVisibility(View.GONE);
+        }
+    };
+
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onPlayerEvent(PlayerEvent event) {
         mBinding.progress.getRoot().setVisibility(event.getState() == Player.STATE_BUFFERING ? View.VISIBLE : View.GONE);
@@ -332,9 +340,9 @@ public class DetailActivity extends BaseActivity implements KeyDown.Listener {
 
     @Override
     public void onSeekTo(int time) {
-        mBinding.center.action.setImageResource(R.drawable.ic_play);
-        mBinding.center.getRoot().setVisibility(View.GONE);
+        mHandler.postDelayed(mHideCenter, 250);
         Players.get().seekTo(time);
+        Players.get().play();
         mKeyDown.resetTime();
     }
 
