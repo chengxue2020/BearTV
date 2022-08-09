@@ -2,14 +2,9 @@ package com.fongmi.android.tv.utils;
 
 import android.app.Activity;
 import android.app.PictureInPictureParams;
-import android.content.Context;
 import android.content.pm.PackageManager;
-import android.net.Uri;
-import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.provider.Settings;
-import android.text.TextUtils;
-import android.text.format.Formatter;
 import android.util.Rational;
 import android.view.View;
 
@@ -42,11 +37,6 @@ public class Utils {
         activity.getWindow().getDecorView().setSystemUiVisibility(flags);
     }
 
-    public static String getIP() {
-        WifiManager manager = (WifiManager) App.get().getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-        return Formatter.formatIpAddress(manager.getConnectionInfo().getIpAddress());
-    }
-
     public static String getUUID() {
         return Settings.Secure.getString(App.get().getContentResolver(), Settings.Secure.ANDROID_ID);
     }
@@ -59,13 +49,5 @@ public class Utils {
         if (url.contains("=http") || url.contains("=https") || url.contains("=https%3a%2f") || url.contains("=http%3a%2f")) return false;
         if (SNIFFER.matcher(url).find()) return !url.contains("cdn-tos") || (!url.contains(".js") && !url.contains(".css"));
         return false;
-    }
-
-    public static String convert(String text) {
-        if (TextUtils.isEmpty(text)) return "";
-        if (text.startsWith(".")) text = text.substring(1);
-        if (text.startsWith("/")) text = text.substring(1);
-        Uri uri = Uri.parse(Prefers.getUrl());
-        return uri.toString().replace(uri.getLastPathSegment(), text);
     }
 }
