@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.Html;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -73,7 +74,7 @@ public class DetailActivity extends BaseActivity implements KeyDown.Listener {
     }
 
     private String getHistoryKey() {
-        return getKey().concat("_").concat(getId());
+        return getKey().concat("@@@").concat(getId());
     }
 
     private Vod.Flag getVodFlag() {
@@ -188,7 +189,7 @@ public class DetailActivity extends BaseActivity implements KeyDown.Listener {
         mSiteViewModel = new ViewModelProvider(this).get(SiteViewModel.class);
         mSiteViewModel.player.observe(this, result -> Players.get().setMediaSource(result));
         mSiteViewModel.result.observe(this, result -> {
-            if (result.getList().isEmpty()) mBinding.progressLayout.showErrorText();
+            if (result.getList().isEmpty()) mBinding.progressLayout.showEmpty();
             else setDetail(result.getList().get(0));
         });
     }
@@ -201,10 +202,10 @@ public class DetailActivity extends BaseActivity implements KeyDown.Listener {
         setText(mBinding.year, R.string.detail_year, item.getVodYear());
         setText(mBinding.area, R.string.detail_area, item.getVodArea());
         setText(mBinding.type, R.string.detail_type, item.getTypeName());
-        setText(mBinding.actor, R.string.detail_actor, item.getVodActor());
         setText(mBinding.site, R.string.detail_site, ApiConfig.getSiteName(getKey()));
-        setText(mBinding.director, R.string.detail_director, item.getVodDirector());
+        setText(mBinding.actor, R.string.detail_actor, Html.fromHtml(item.getVodActor()).toString());
         setText(mBinding.content, R.string.detail_content, Html.fromHtml(item.getVodContent()).toString());
+        setText(mBinding.director, R.string.detail_director, Html.fromHtml(item.getVodDirector()).toString());
         mFlagAdapter.setItems(item.getVodFlags(), null);
         mBinding.video.requestFocus();
         checkHistory();
