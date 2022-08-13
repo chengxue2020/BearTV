@@ -137,7 +137,7 @@ public class DetailActivity extends BaseActivity implements KeyDown.Listener {
         mBinding.flag.addOnChildViewHolderSelectedListener(new OnChildViewHolderSelectedListener() {
             @Override
             public void onChildViewHolderSelected(@NonNull RecyclerView parent, @Nullable RecyclerView.ViewHolder child, int position, int subposition) {
-                setFlagActivated((Vod.Flag) mFlagAdapter.get(position));
+                if (mFlagAdapter.size() > 0) setFlagActivated((Vod.Flag) mFlagAdapter.get(position));
             }
         });
         mBinding.group.addOnChildViewHolderSelectedListener(new OnChildViewHolderSelectedListener() {
@@ -181,6 +181,7 @@ public class DetailActivity extends BaseActivity implements KeyDown.Listener {
         if (mFullscreen) Notify.show(ResUtil.getString(R.string.play_ready, item.getName()));
         mSiteViewModel.playerContent(getKey(), getVodFlag().getFlag(), item.getUrl());
         mBinding.progress.getRoot().setVisibility(View.VISIBLE);
+        mBinding.error.getRoot().setVisibility(View.GONE);
         updateHistory(item, replay);
     }
 
@@ -229,7 +230,7 @@ public class DetailActivity extends BaseActivity implements KeyDown.Listener {
     }
 
     private void setEpisodeActivated(Vod.Flag.Episode item) {
-        if (shouldEnterFullscreen()) return;
+        if (shouldEnterFullscreen(item)) return;
         mCurrent = mBinding.flag.getSelectedPosition();
         for (int i = 0; i < mFlagAdapter.size(); i++) ((Vod.Flag) mFlagAdapter.get(i)).toggle(mCurrent == i, item);
         mEpisodeAdapter.notifyArrayItemRangeChanged(0, mEpisodeAdapter.size());
@@ -245,8 +246,8 @@ public class DetailActivity extends BaseActivity implements KeyDown.Listener {
         mGroupAdapter.setItems(items, null);
     }
 
-    private boolean shouldEnterFullscreen() {
-        boolean enter = mBinding.episode.getSelectedPosition() == getEpisodePosition();
+    private boolean shouldEnterFullscreen(Vod.Flag.Episode item) {
+        boolean enter = !mFullscreen && item.isActivated();
         if (enter) enterFullscreen();
         return enter;
     }
@@ -319,6 +320,10 @@ public class DetailActivity extends BaseActivity implements KeyDown.Listener {
 
     private void checkHistory() {
         mHistory = AppDatabase.get().getHistoryDao().find(getHistoryKey());
+        if (mFlagAdapter.size() == 0) {
+            Notify.show(R.string.error_episode);
+            return;
+        }
         if (mHistory != null) {
             setFlagActivated(mHistory.getFlag());
             setEpisodeActivated(mHistory.getEpisode());
@@ -389,6 +394,8 @@ public class DetailActivity extends BaseActivity implements KeyDown.Listener {
             case 0:
                 checkPosition();
                 break;
+            case Player.STATE_IDLE:
+                break;
             case Player.STATE_BUFFERING:
                 mBinding.progress.getRoot().setVisibility(View.VISIBLE);
                 break;
@@ -399,8 +406,10 @@ public class DetailActivity extends BaseActivity implements KeyDown.Listener {
                 onNext();
                 break;
             default:
+                Players.get().stop();
                 mBinding.progress.getRoot().setVisibility(View.GONE);
-                Notify.show(event.getMsg());
+                mBinding.error.getRoot().setVisibility(View.VISIBLE);
+                mBinding.error.text.setText(event.getMsg());
                 break;
         }
     }
