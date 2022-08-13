@@ -5,7 +5,6 @@ import android.content.Intent;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.Html;
-import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -74,7 +73,7 @@ public class DetailActivity extends BaseActivity implements KeyDown.Listener {
     }
 
     private String getHistoryKey() {
-        return getKey().concat("@@@").concat(getId());
+        return getKey().concat(AppDatabase.SYMBOL).concat(getId());
     }
 
     private Vod.Flag getVodFlag() {
@@ -230,6 +229,7 @@ public class DetailActivity extends BaseActivity implements KeyDown.Listener {
     }
 
     private void setEpisodeActivated(Vod.Flag.Episode item) {
+        if (shouldEnterFullscreen()) return;
         mCurrent = mBinding.flag.getSelectedPosition();
         for (int i = 0; i < mFlagAdapter.size(); i++) ((Vod.Flag) mFlagAdapter.get(i)).toggle(mCurrent == i, item);
         mEpisodeAdapter.notifyArrayItemRangeChanged(0, mEpisodeAdapter.size());
@@ -243,6 +243,12 @@ public class DetailActivity extends BaseActivity implements KeyDown.Listener {
         for (int i = 0; i < itemSize; i++) items.add(String.valueOf(i * 20 + 1));
         mBinding.group.setVisibility(itemSize > 1 ? View.VISIBLE : View.GONE);
         mGroupAdapter.setItems(items, null);
+    }
+
+    private boolean shouldEnterFullscreen() {
+        boolean enter = mBinding.episode.getSelectedPosition() == getEpisodePosition();
+        if (enter) enterFullscreen();
+        return enter;
     }
 
     private void enterFullscreen() {
