@@ -15,7 +15,6 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.bean.Filter;
-import com.fongmi.android.tv.bean.Result;
 import com.fongmi.android.tv.bean.Vod;
 import com.fongmi.android.tv.databinding.FragmentVodBinding;
 import com.fongmi.android.tv.model.SiteViewModel;
@@ -40,6 +39,7 @@ public class VodFragment extends Fragment implements CustomScroller.Callback, Vo
     private FragmentVodBinding mBinding;
     private SiteViewModel mSiteViewModel;
     private ArrayObjectAdapter mAdapter;
+    private ArrayObjectAdapter mLast;
     private CustomScroller mScroller;
     private List<Filter> mFilters;
 
@@ -90,8 +90,8 @@ public class VodFragment extends Fragment implements CustomScroller.Callback, Vo
         mSiteViewModel = new ViewModelProvider(this).get(SiteViewModel.class);
         mSiteViewModel.result.observe(getViewLifecycleOwner(), result -> {
             mScroller.endLoading(result.getList().isEmpty());
-            addVideo(result);
-            checkSize();
+            addVideo(result.getList());
+            checkPage();
         });
     }
 
@@ -108,7 +108,7 @@ public class VodFragment extends Fragment implements CustomScroller.Callback, Vo
         getVideo("1");
     }
 
-    private void checkSize() {
+    private void checkPage() {
         if (mScroller.getPage() != 1 || mAdapter.size() >= 4) return;
         mScroller.addPage();
         getVideo("2");
@@ -120,13 +120,22 @@ public class VodFragment extends Fragment implements CustomScroller.Callback, Vo
         mSiteViewModel.categoryContent(getTypeId(), page, true, mExtend);
     }
 
-    private void addVideo(Result result) {
-        int columns = result.getList().size() % 6 == 0 ? 6 : 5;
+    private boolean checkLastSize(List<Vod> items) {
+        if (mLast == null) return false;
+        int size = 5 - mLast.size();
+        if (size == 0) return false;
+        mLast.addAll(mLast.size(), new ArrayList<>(items.subList(0, size)));
+        addVideo(new ArrayList<>(items.subList(size, items.size())));
+        return true;
+    }
+
+    private void addVideo(List<Vod> items) {
+        if (checkLastSize(items)) return;
         List<ListRow> rows = new ArrayList<>();
-        for (List<Vod> items : Lists.partition(result.getList(), columns)) {
-            ArrayObjectAdapter adapter = new ArrayObjectAdapter(new VodPresenter(this, columns));
-            adapter.addAll(0, items);
-            rows.add(new ListRow(adapter));
+        for (List<Vod> part : Lists.partition(items, 5)) {
+            mLast = new ArrayObjectAdapter(new VodPresenter(this));
+            mLast.addAll(0, part);
+            rows.add(new ListRow(mLast));
         }
         mAdapter.addAll(mAdapter.size(), rows);
     }
