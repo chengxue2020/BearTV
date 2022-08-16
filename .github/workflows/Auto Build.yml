@@ -1,8 +1,6 @@
 name: Auto Build
 
 on:
-  schedule:
-    - cron: 10,40 0-18 * * *
   push:
     branches:
       - main
@@ -74,12 +72,6 @@ jobs:
           for file in `find ~ -name "*debug*.apk" -print`; do
             mv "$file" apk/BearTV_${{ env.tag }}_Debug.apk
           done
-      - name: Upload App To Artifact
-        uses: actions/upload-artifact@v3
-        if: ${{ env.commit }}
-        with:
-          name: BearTV_Release_and_Debug
-          path: BearTV/apk/*
       - name: Release and Upload Assets
         uses: softprops/action-gh-release@v1
         if: ${{ env.commit }}
