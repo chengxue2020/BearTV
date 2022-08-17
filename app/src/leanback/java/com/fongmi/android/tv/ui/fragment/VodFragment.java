@@ -121,7 +121,7 @@ public class VodFragment extends Fragment implements CustomScroller.Callback, Vo
     }
 
     private boolean checkLastSize(List<Vod> items) {
-        if (mLast == null) return false;
+        if (mLast == null || items.size() == 0) return false;
         int size = 5 - mLast.size();
         if (size == 0) return false;
         mLast.addAll(mLast.size(), new ArrayList<>(items.subList(0, size)));
@@ -134,7 +134,7 @@ public class VodFragment extends Fragment implements CustomScroller.Callback, Vo
         List<ListRow> rows = new ArrayList<>();
         for (List<Vod> part : Lists.partition(items, 5)) {
             mLast = new ArrayObjectAdapter(new VodPresenter(this));
-            mLast.addAll(0, part);
+            mLast.setItems(part, null);
             rows.add(new ListRow(mLast));
         }
         mAdapter.addAll(mAdapter.size(), rows);
@@ -146,7 +146,7 @@ public class VodFragment extends Fragment implements CustomScroller.Callback, Vo
             FilterPresenter presenter = new FilterPresenter(filter.getKey());
             ArrayObjectAdapter adapter = new ArrayObjectAdapter(presenter);
             presenter.setOnClickListener((key, item) -> setClick(adapter, key, item));
-            adapter.addAll(0, filter.getValue());
+            adapter.setItems(filter.getValue(), null);
             rows.add(new ListRow(adapter));
         }
         mAdapter.addAll(0, rows);

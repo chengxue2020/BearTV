@@ -1,6 +1,9 @@
 package com.fongmi.android.tv.bean;
 
 import android.text.TextUtils;
+import android.util.Base64;
+
+import androidx.annotation.NonNull;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
@@ -18,6 +21,8 @@ public class Parse {
     private String url;
     @SerializedName("ext")
     private Ext ext;
+
+    private boolean activated;
 
     public static Parse objectFrom(JsonElement element) {
         return new Gson().fromJson(element, Parse.class);
@@ -61,15 +66,29 @@ public class Parse {
     }
 
     public Ext getExt() {
-        return ext;
+        return ext == null ? new Ext() : ext;
+    }
+
+    public boolean isActivated() {
+        return activated;
+    }
+
+    public void setActivated(boolean activated) {
+        this.activated = activated;
     }
 
     public boolean hasHeader() {
-        return getExt() != null && getExt().getHeader() != null;
+        return getExt().getHeader() != null;
     }
 
     public JsonElement getHeader() {
         return getExt().getHeader();
+    }
+
+    public String mixUrl() {
+        int index = getUrl().indexOf("?");
+        if (index == -1) return getUrl();
+        return getUrl().substring(0, index + 1) + "cat_ext=" + Base64.encodeToString(getExt().toString().getBytes(), Base64.DEFAULT | Base64.URL_SAFE | Base64.NO_WRAP) + "&" + getUrl().substring(index + 1);
     }
 
     @Override
@@ -93,6 +112,12 @@ public class Parse {
 
         public JsonElement getHeader() {
             return header;
+        }
+
+        @NonNull
+        @Override
+        public String toString() {
+            return new Gson().toJson(this);
         }
     }
 }

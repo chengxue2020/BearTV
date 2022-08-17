@@ -1,6 +1,7 @@
 package com.fongmi.android.tv.model;
 
 import android.text.TextUtils;
+import android.util.Base64;
 
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
@@ -13,6 +14,7 @@ import com.fongmi.android.tv.net.OKHttp;
 import com.fongmi.android.tv.utils.Utils;
 import com.github.catvod.crawler.Spider;
 import com.github.catvod.crawler.SpiderDebug;
+import com.google.gson.Gson;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -51,6 +53,10 @@ public class SiteViewModel extends ViewModel {
                 SpiderDebug.log(homeVideoContent);
                 result.setList(Result.fromJson(homeVideoContent).getList());
                 return result;
+            } else if (home.getType() == 4) {
+                String homeContent = OKHttp.newCall(home.getApi()).execute().body().string();
+                SpiderDebug.log(homeContent);
+                return Result.fromJson(homeContent);
             } else {
                 String body = OKHttp.newCall(home.getApi()).execute().body().string();
                 SpiderDebug.log(body);
@@ -79,6 +85,7 @@ public class SiteViewModel extends ViewModel {
                 return Result.fromJson(categoryContent);
             } else {
                 HashMap<String, String> params = new HashMap<>();
+                if (home.getType() == 4) params.put("ext", getBase64Ext(extend));
                 params.put("ac", home.getType() == 0 ? "videolist" : "detail");
                 params.put("t", tid);
                 params.put("pg", page);
@@ -122,12 +129,19 @@ public class SiteViewModel extends ViewModel {
                 Result result = Result.objectFrom(playerContent);
                 if (result.getFlag().isEmpty()) result.setFlag(flag);
                 return result;
+            } else if (site.getType() == 4) {
+                HashMap<String, String> params = new HashMap<>();
+                params.put("play", id);
+                params.put("flag", flag);
+                String body = OKHttp.newCall(site.getApi(), params).execute().body().string();
+                SpiderDebug.log(body);
+                return Result.fromJson(body);
             } else {
                 Result result = new Result();
                 result.setUrl(id);
                 result.setFlag(flag);
                 result.setPlayUrl(site.getPlayerUrl());
-                result.setParse(Utils.isVideoFormat(id) ? "0" : "1");
+                result.setParse(Utils.isVideoFormat(id) ? 0 : 1);
                 return result;
             }
         });
@@ -143,7 +157,7 @@ public class SiteViewModel extends ViewModel {
                 postSearch(site, Result.fromJson(searchContent));
             } else {
                 HashMap<String, String> params = new HashMap<>();
-                if (site.getType() == 1) params.put("ac", "detail");
+                if (site.getType() != 0) params.put("ac", "detail");
                 params.put("wd", keyword);
                 String body = OKHttp.newCall(site.getApi(), params).execute().body().string();
                 SpiderDebug.log(body);
@@ -153,6 +167,11 @@ public class SiteViewModel extends ViewModel {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private String getBase64Ext(HashMap<String, String> extend) {
+        String extStr = new Gson().toJson(extend);
+        return Base64.encodeToString(extStr.getBytes(), Base64.DEFAULT | Base64.NO_WRAP);
     }
 
     private void postSearch(Site site, Result item) {
@@ -167,6 +186,7 @@ public class SiteViewModel extends ViewModel {
             try {
                 if (!Thread.interrupted()) result.postValue(service.submit(callable).get(15, TimeUnit.SECONDS));
             } catch (Exception e) {
+                if (e instanceof InterruptedException) return;
                 if (!Thread.interrupted()) result.postValue(new Result());
             }
         });
