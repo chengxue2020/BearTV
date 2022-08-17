@@ -18,7 +18,12 @@ public class SitePresenter extends Presenter {
     }
 
     public interface OnClickListener {
-        void onItemClick(Site item);
+
+        void onTextClick(Site item);
+
+        void onSearchClick(Site item);
+
+        void onFilterClick(Site item);
     }
 
     @Override
@@ -30,8 +35,12 @@ public class SitePresenter extends Presenter {
     public void onBindViewHolder(Presenter.ViewHolder viewHolder, Object object) {
         Site item = (Site) object;
         ViewHolder holder = (ViewHolder) viewHolder;
-        setOnClickListener(holder, view -> mListener.onItemClick(item));
-        holder.binding.text.setText((item.isActivated() ? "√ " : "").concat(item.getName()));
+        holder.binding.text.setText(item.getActivatedName());
+        holder.binding.filter.setImageResource(item.getFilterIcon());
+        holder.binding.search.setImageResource(item.getSearchIcon());
+        holder.binding.text.setOnClickListener(v -> mListener.onTextClick(item));
+        holder.binding.search.setOnClickListener(v -> mListener.onSearchClick(item));
+        holder.binding.filter.setOnClickListener(v -> mListener.onFilterClick(item));
     }
 
     @Override

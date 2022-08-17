@@ -91,9 +91,17 @@ public class VodActivity extends BaseActivity {
 
     private void setTypes() {
         List<Class> newTypes = new ArrayList<>();
-        for (String cate : ApiConfig.get().getHome().getCategories()) for (Class type : mResult.getTypes()) if (cate.equals(type.getTypeName())) newTypes.add(type);
+        for (String cate : ApiConfig.get().getHome().getCategories()) {
+            for (Class type : mResult.getTypes()) {
+                if (cate.equals(type.getTypeName())) newTypes.add(type);
+            }
+        }
         if (newTypes.size() > 0) mResult.setTypes(newTypes);
-        for (Class type : mResult.getTypes()) if (mResult.getFilters().containsKey(type.getTypeId())) type.setFilter(false);
+        if (ApiConfig.get().getHome().isFilterable()) {
+            for (Class item : mResult.getTypes()) {
+                if (mResult.getFilters().containsKey(item.getTypeId())) item.setFilter(false);
+            }
+        }
         mAdapter.setItems(mResult.getTypes(), null);
     }
 
@@ -103,8 +111,7 @@ public class VodActivity extends BaseActivity {
 
     private void updateFilter(Class item) {
         if (item.getFilter() != null) {
-            item.toggleFilter();
-            getVodFragment().toggleFilter(item.getFilter());
+            getVodFragment().toggleFilter(item.toggleFilter().getFilter());
             mAdapter.notifyArrayItemRangeChanged(0, mAdapter.size());
         }
     }
