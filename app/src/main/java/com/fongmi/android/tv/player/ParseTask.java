@@ -5,7 +5,6 @@ import android.os.Looper;
 
 import com.fongmi.android.tv.api.ApiConfig;
 import com.fongmi.android.tv.bean.Parse;
-import com.fongmi.android.tv.bean.ParseResult;
 import com.fongmi.android.tv.bean.Result;
 import com.fongmi.android.tv.net.OKHttp;
 import com.fongmi.android.tv.utils.Json;
@@ -38,13 +37,10 @@ public class ParseTask {
         this.callback = callback;
     }
 
-    private boolean useParse(Result result) {
-        return (result.getPlayUrl().isEmpty() && ApiConfig.get().getFlags().contains(result.getFlag())) || result.getJx() == 1;
-    }
-
-    public void run(Result result) {
-        setParse(result.getPlayUrl(), useParse(result));
+    public ParseTask run(Result result, boolean useParse) {
+        setParse(result.getPlayUrl(), useParse);
         executor.submit(() -> doInBackground(result.getUrl(), result.getFlag()));
+        return this;
     }
 
     private void setParse(String url, boolean useParse) {
@@ -79,7 +75,7 @@ public class ParseTask {
             JsonObject object = JsonParser.parseString(response.body().string()).getAsJsonObject();
             HashMap<String, String> headers = new HashMap<>();
             for (String key : object.keySet()) if (key.equalsIgnoreCase("user-agent") || key.equalsIgnoreCase("referer")) headers.put(key, object.get(key).getAsString());
-            onParseSuccess(headers, object.get("url").getAsString());
+            onParseSuccess(headers, object.get("url").getAsString(), "");
         } catch (Exception e) {
             e.printStackTrace();
             onParseError();
@@ -89,13 +85,13 @@ public class ParseTask {
     private void jsonExtend(String webUrl) {
         LinkedHashMap<String, String> jxs = new LinkedHashMap<>();
         for (Parse item : ApiConfig.get().getParses()) if (item.getType() == 1) jxs.put(item.getName(), item.mixUrl());
-        ParseResult result = ParseResult.objectFrom(ApiConfig.get().jsonExt(parse.getUrl(), jxs, webUrl));
+        Result result = Result.fromObject(ApiConfig.get().jsonExt(parse.getUrl(), jxs, webUrl));
         if (result.getUrl().isEmpty()) {
             onParseError();
         } else if (result.getParse() == 1) {
             handler.post(() -> Players.get().web().start(result.getUrl(), callback));
         } else {
-            onParseSuccess(result.hasHeader() ? Json.toMap(result.getHeader()) : new HashMap<>(), result.getUrl());
+            onParseSuccess(result.getHeaders(), result.getUrl(), result.getJxFrom());
         }
     }
 
@@ -108,19 +104,19 @@ public class ParseTask {
             map.put("url", item.getUrl());
             jxs.put(item.getName(), map);
         }
-        ParseResult result = ParseResult.objectFrom(ApiConfig.get().jsonExtMix(flag + "111", parse.getUrl(), parse.getName(), jxs, webUrl));
+        Result result = Result.fromObject(ApiConfig.get().jsonExtMix(flag + "@", parse.getUrl(), parse.getName(), jxs, webUrl));
         if (result.getUrl().isEmpty()) {
             onParseError();
         } else if (result.getParse() == 1) {
             handler.post(() -> Players.get().web().start(result.getUrl(), callback));
         } else {
-            onParseSuccess(result.hasHeader() ? Json.toMap(result.getHeader()) : new HashMap<>(), result.getUrl());
+            onParseSuccess(result.getHeaders(), result.getUrl(), result.getJxFrom());
         }
     }
 
-    private void onParseSuccess(Map<String, String> headers, String url) {
+    private void onParseSuccess(Map<String, String> headers, String url, String from) {
         handler.post(() -> {
-            if (callback != null) callback.onParseSuccess(headers, url);
+            if (callback != null) callback.onParseSuccess(headers, url, from);
         });
     }
 
@@ -138,7 +134,7 @@ public class ParseTask {
 
     public interface Callback {
 
-        void onParseSuccess(Map<String, String> headers, String url);
+        void onParseSuccess(Map<String, String> headers, String url, String from);
 
         void onParseError();
     }

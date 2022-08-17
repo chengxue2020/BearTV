@@ -7,6 +7,8 @@ import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.bean.Result;
 import com.fongmi.android.tv.event.PlayerEvent;
 import com.fongmi.android.tv.ui.custom.CustomWebView;
+import com.fongmi.android.tv.utils.Notify;
+import com.fongmi.android.tv.utils.ResUtil;
 import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.PlaybackException;
 import com.google.android.exoplayer2.Player;
@@ -22,6 +24,7 @@ public class Players implements Player.Listener, ParseTask.Callback {
     private StringBuilder builder;
     private Formatter formatter;
     private ExoPlayer exoPlayer;
+    private ParseTask parseTask;
     private String key;
 
     private static class Loader {
@@ -103,11 +106,12 @@ public class Players implements Player.Listener, ParseTask.Callback {
         return exoPlayer.getPlaybackState() == Player.STATE_IDLE;
     }
 
-    public void setMediaSource(Result result) {
+    public void setMediaSource(Result result, boolean useParse) {
         if (result.getUrl().isEmpty()) {
             PlayerEvent.error(R.string.error_play_load);
         } else if (result.getParse() == 1 || result.getJx() == 1) {
-            ParseTask.create(this).run(result);
+            if (parseTask != null) parseTask.cancel();
+            parseTask = ParseTask.create(this).run(result, useParse);
         } else {
             setMediaSource(result.getHeaders(), result.getPlayUrl() + result.getUrl());
         }
@@ -156,7 +160,8 @@ public class Players implements Player.Listener, ParseTask.Callback {
     }
 
     @Override
-    public void onParseSuccess(Map<String, String> headers, String url) {
+    public void onParseSuccess(Map<String, String> headers, String url, String from) {
+        if (from.length() > 0) Notify.show(ResUtil.getString(R.string.parse_from, from));
         setMediaSource(headers, url);
     }
 

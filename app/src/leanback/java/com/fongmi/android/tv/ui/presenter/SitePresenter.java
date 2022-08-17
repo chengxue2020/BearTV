@@ -11,14 +11,14 @@ import com.fongmi.android.tv.databinding.AdapterSiteBinding;
 
 public class SitePresenter extends Presenter {
 
-    private OnClickListener mListener;
+    private final OnClickListener mListener;
+
+    public SitePresenter(OnClickListener listener) {
+        this.mListener = listener;
+    }
 
     public interface OnClickListener {
         void onItemClick(Site item);
-    }
-
-    public void setOnClickListener(OnClickListener listener) {
-        this.mListener = listener;
     }
 
     @Override
