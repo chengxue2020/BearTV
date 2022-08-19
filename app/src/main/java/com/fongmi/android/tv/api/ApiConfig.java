@@ -40,6 +40,7 @@ public class ApiConfig {
     private Handler handler;
     private Parse parse;
     private Site home;
+    private int cid;
 
     private static class Loader {
         static volatile ApiConfig INSTANCE = new ApiConfig();
@@ -55,6 +56,10 @@ public class ApiConfig {
 
     public static String getSiteName(String key) {
         return get().getSite(key).getName();
+    }
+
+    public static int getCid() {
+        return get().cid;
     }
 
     public ApiConfig init() {
@@ -110,15 +115,15 @@ public class ApiConfig {
 
     private void parseJson(JsonObject object) {
         for (JsonElement element : object.get("sites").getAsJsonArray()) {
-            Site site = Site.objectFrom(element);
+            Site site = Site.objectFrom(element).sync();
             site.setExt(parseExt(site.getExt()));
             if (site.getKey().equals(Prefers.getHome())) setHome(site);
-            sites.add(site);
+            if (!sites.contains(site)) sites.add(site);
         }
         for (JsonElement element : object.get("parses").getAsJsonArray()) {
             Parse parse = Parse.objectFrom(element);
             if (parse.getName().equals(Prefers.getParse())) setParse(parse);
-            parses.add(parse);
+            if (!parses.contains(parse)) parses.add(parse);
         }
         if (home == null) setHome(sites.isEmpty() ? new Site() : sites.get(0));
         if (parse == null) setParse(parses.isEmpty() ? new Parse() : parses.get(0));
@@ -217,6 +222,10 @@ public class ApiConfig {
         this.parse.setActivated(true);
         Prefers.putParse(parse.getName());
         for (Parse item : parses) item.setActivated(parse);
+    }
+
+    public void setCid(int cid) {
+        this.cid = cid;
     }
 
     public ApiConfig clear() {

@@ -2,7 +2,8 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content">
+    android:layout_height="wrap_content"
+    android:orientation="horizontal">
 
     <TextView
         android:id="@+id/text"
@@ -31,7 +32,7 @@
         android:focusable="true"
         android:focusableInTouchMode="true"
         android:padding="8dp"
-        android:scaleType="center"
+        android:scaleType="fitCenter"
         android:src="@drawable/ic_search_on" />
 
     <ImageView
@@ -42,7 +43,7 @@
         android:focusable="true"
         android:focusableInTouchMode="true"
         android:padding="8dp"
-        android:scaleType="center"
+        android:scaleType="fitCenter"
         android:src="@drawable/ic_filter_on" />
 
 </LinearLayout>
