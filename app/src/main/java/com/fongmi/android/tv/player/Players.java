@@ -26,6 +26,7 @@ public class Players implements Player.Listener, ParseTask.Callback {
     private ExoPlayer exoPlayer;
     private ParseTask parseTask;
     private String key;
+    private int retry;
 
     private static class Loader {
         static volatile Players INSTANCE = new Players();
@@ -57,6 +58,19 @@ public class Players implements Player.Listener, ParseTask.Callback {
 
     public void setKey(String key) {
         this.key = key;
+    }
+
+    public int getRetry() {
+        return retry;
+    }
+
+    public void setRetry(int retry) {
+        this.retry = retry;
+    }
+
+    public int addRetry() {
+        ++retry;
+        return retry;
     }
 
     public String getSpeed() {
@@ -135,6 +149,7 @@ public class Players implements Player.Listener, ParseTask.Callback {
     }
 
     public void stop() {
+        this.retry = 0;
         if (exoPlayer != null) {
             exoPlayer.stop();
             exoPlayer.clearMediaItems();
