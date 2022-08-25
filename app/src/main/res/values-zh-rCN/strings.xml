@@ -18,6 +18,7 @@
     <string name="detail_director">导演：<xliff:g name="name">%s</xliff:g></string>
     <string name="detail_actor">演员：<xliff:g name="name">%s</xliff:g></string>
     <string name="detail_content">简介：<xliff:g name="name">%s</xliff:g></string>
+    <string name="detail_reverse">倒序</string>
 
     <!-- Play -->
     <string name="play">播放</string>
@@ -52,6 +53,13 @@
     <string name="error_play_format">不支援的影片格式</string>
     <string name="error_episode">暂无播放数据</string>
     <string name="error_empty">找不到数据</string>
+
+    <!-- Crash -->
+    <string name="crash_info">发生意外错误\n抱歉给您带来不便</string>
+    <string name="crash_restart">重新启动</string>
+    <string name="crash_details">错误信息</string>
+    <string name="crash_details_title">错误信息</string>
+    <string name="crash_details_close">关闭</string>
 
     <!-- UNIT -->
     <string name="second"><xliff:g name="name">%s</xliff:g> 秒</string>
