@@ -35,16 +35,11 @@ public class CustomViewPager extends ViewPager {
     private void init() {
         this.rect = new Rect();
         this.shake = ResUtil.getAnim(R.anim.shake);
-        setPageTransformer(false, (page, position) -> {
-            page.setTranslationX(page.getWidth() * -position);
-            if (position <= -1 || position >= 1) {
-                page.setAlpha(0);
-            } else if (position == 0) {
-                page.setAlpha(1);
-            } else {
-                page.setAlpha(1 - Math.abs(position));
-            }
-        });
+    }
+
+    @Override
+    public void setCurrentItem(int item) {
+        super.setCurrentItem(item, false);
     }
 
     @Override
@@ -150,7 +145,7 @@ public class CustomViewPager extends ViewPager {
 
     boolean pageLeft() {
         if (getCurrentItem() > 0) {
-            setCurrentItem(getCurrentItem() - 1, true);
+            setCurrentItem(getCurrentItem() - 1, false);
             return true;
         }
         return false;
@@ -158,7 +153,7 @@ public class CustomViewPager extends ViewPager {
 
     boolean pageRight() {
         if (getAdapter() != null && getCurrentItem() < getAdapter().getCount() - 1) {
-            setCurrentItem(getCurrentItem() + 1, true);
+            setCurrentItem(getCurrentItem() + 1, false);
             return true;
         }
         return false;

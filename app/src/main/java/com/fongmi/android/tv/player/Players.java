@@ -78,12 +78,15 @@ public class Players implements Player.Listener, ParseTask.Callback {
         return String.format(Locale.getDefault(), "%.2f", exoPlayer.getPlaybackParameters().speed);
     }
 
-    public String addSpeed() {
+    public void addSpeed() {
         float speed = exoPlayer.getPlaybackParameters().speed;
         float addon = speed >= 2 ? 1f : 0.25f;
         speed = speed >= 5 ? 0.5f : speed + addon;
         exoPlayer.setPlaybackSpeed(speed);
-        return getSpeed();
+    }
+
+    public void resetSpeed() {
+        exoPlayer.setPlaybackSpeed(1f);
     }
 
     public String getTime(long time) {
@@ -125,22 +128,27 @@ public class Players implements Player.Listener, ParseTask.Callback {
         return getCurrentPosition() >= getDuration();
     }
 
-    public void setMediaSource(Result result, boolean useParse) {
+    public void start(Result result, boolean useParse) {
         if (result.getUrl().isEmpty()) {
             PlayerEvent.error(R.string.error_play_load);
         } else if (result.getParse(1) == 1 || result.getJx() == 1) {
             if (parseTask != null) parseTask.cancel();
             parseTask = ParseTask.create(this).run(result, useParse);
         } else {
-            setMediaSource(result.getHeaders(), result.getPlayUrl() + result.getUrl());
+            setMediaSource(result);
         }
     }
 
-    public void setMediaSource(Map<String, String> headers, String url) {
+    private void setMediaSource(Result result) {
+        exoPlayer.setMediaSource(ExoUtil.getSource(result));
+        PlayerEvent.state(0);
+        exoPlayer.prepare();
+    }
+
+    private void setMediaSource(Map<String, String> headers, String url) {
         exoPlayer.setMediaSource(ExoUtil.getSource(headers, url));
         PlayerEvent.state(0);
         exoPlayer.prepare();
-        exoPlayer.play();
     }
 
     public void pause() {
