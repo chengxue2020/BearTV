@@ -51,6 +51,10 @@ public class ParseTask {
     }
 
     private void doInBackground(String webUrl, String flag) {
+        if (webUrl.startsWith("magnet:")) {
+            onParseError();
+            return;
+        }
         switch (parse.getType()) {
             case 0: //嗅探
                 handler.post(() -> Players.get().web().start(parse.getUrl() + webUrl, callback));
