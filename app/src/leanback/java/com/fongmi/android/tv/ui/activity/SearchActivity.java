@@ -1,23 +1,18 @@
 package com.fongmi.android.tv.ui.activity;
 
-import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.os.Handler;
 import android.os.Looper;
-import android.speech.RecognizerIntent;
-import android.speech.SpeechRecognizer;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.view.View;
-import android.view.animation.Animation;
 import android.view.inputmethod.EditorInfo;
 
+import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
-import androidx.core.content.ContextCompat;
 import androidx.viewbinding.ViewBinding;
 
 import com.fongmi.android.tv.R;
@@ -31,7 +26,6 @@ import com.fongmi.android.tv.ui.adapter.WordAdapter;
 import com.fongmi.android.tv.ui.custom.CustomKeyboard;
 import com.fongmi.android.tv.ui.custom.CustomListener;
 import com.fongmi.android.tv.ui.custom.SpaceItemDecoration;
-import com.fongmi.android.tv.utils.ResUtil;
 import com.fongmi.android.tv.utils.Utils;
 
 import java.io.IOException;
@@ -42,18 +36,21 @@ import okhttp3.Response;
 
 public class SearchActivity extends BaseActivity implements WordAdapter.OnClickListener, HistoryAdapter.OnClickListener, CustomKeyboard.Callback {
 
-    private final ActivityResultLauncher<String> launcherString = registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> onVoice());
-
     private ActivitySearchBinding mBinding;
-    private SpeechRecognizer mRecognizer;
     private HistoryAdapter mHistoryAdapter;
     private WordAdapter mWordAdapter;
-    private Animation mFlicker;
     private Handler mHandler;
 
     public static void start(Activity activity) {
         activity.startActivity(new Intent(activity, SearchActivity.class));
     }
+
+    private final ActivityResultLauncher<String> launcher = registerForActivityResult(new ActivityResultContracts.RequestPermission(), new ActivityResultCallback<>() {
+        @Override
+        public void onActivityResult(Boolean isGranted) {
+            if (isGranted) mBinding.mic.start();
+        }
+    });
 
     @Override
     protected ViewBinding getBinding() {
@@ -62,9 +59,7 @@ public class SearchActivity extends BaseActivity implements WordAdapter.OnClickL
 
     @Override
     protected void initView() {
-        mFlicker = ResUtil.getAnim(R.anim.flicker);
         mHandler = new Handler(Looper.getMainLooper());
-        mRecognizer = SpeechRecognizer.createSpeechRecognizer(this);
         CustomKeyboard.init(this, mBinding);
         setRecyclerView();
         getHot();
@@ -83,10 +78,10 @@ public class SearchActivity extends BaseActivity implements WordAdapter.OnClickL
                 else getSuggest(s.toString());
             }
         });
-        mRecognizer.setRecognitionListener(new CustomListener() {
+        mBinding.mic.setListener(launcher, new CustomListener() {
             @Override
             public void onResults(String result) {
-                stopListening();
+                mBinding.mic.stop();
                 mBinding.keyword.setText(result);
                 mBinding.keyword.setSelection(mBinding.keyword.length());
             }
@@ -132,9 +127,7 @@ public class SearchActivity extends BaseActivity implements WordAdapter.OnClickL
 
     @Override
     public void onDataChanged(int size) {
-        int visible = size == 0 ? View.GONE : View.VISIBLE;
-        if (mBinding.historyLayout.getVisibility() == visible) return;
-        mBinding.historyLayout.setVisibility(visible);
+        mBinding.historyLayout.setVisibility(size == 0 ? View.GONE : View.VISIBLE);
     }
 
     @Override
@@ -153,55 +146,8 @@ public class SearchActivity extends BaseActivity implements WordAdapter.OnClickL
     }
 
     @Override
-    public void onVoice() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            launcherString.launch(Manifest.permission.RECORD_AUDIO);
-        } else {
-            startListening();
-        }
-    }
-
-    private void startListening() {
-        Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-        mBinding.keyboard.setVisibility(View.INVISIBLE);
-        mBinding.voice.setVisibility(View.VISIBLE);
-        mBinding.voice.startAnimation(mFlicker);
-        mRecognizer.startListening(intent);
-    }
-
-    private void stopListening() {
-        mBinding.keyboard.setVisibility(View.VISIBLE);
-        mBinding.voice.setVisibility(View.GONE);
-        mBinding.voice.clearAnimation();
-        mRecognizer.stopListening();
-    }
-
-    private void destroyRecognizer() {
-        try {
-            mRecognizer.destroy();
-        } catch (Exception ignored) {
-        }
-    }
-
-    @Override
     protected void onResume() {
         super.onResume();
         mBinding.keyword.requestFocus();
-    }
-
-    @Override
-    public void onBackPressed() {
-        if (mBinding.voice.getVisibility() == View.VISIBLE) {
-            stopListening();
-        } else {
-            super.onBackPressed();
-        }
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        destroyRecognizer();
     }
 }
