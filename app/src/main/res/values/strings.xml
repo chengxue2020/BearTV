@@ -42,6 +42,7 @@
     <string name="setting_url">Configuration</string>
     <string name="setting_render">Render</string>
     <string name="setting_thumbnail">Thumbnail</string>
+    <string name="setting_version">Version</string>
 
     <!-- Dialog -->
     <string name="dialog_positive">OK</string>
@@ -58,6 +59,10 @@
     <string name="error_play_format">Unsupported video format</string>
     <string name="error_episode">No episode data</string>
     <string name="error_empty">Not found</string>
+
+    <!-- Update -->
+    <string name="update_version">New version <xliff:g name="name">%s</xliff:g></string>
+    <string name="update_confirm">Update</string>
 
     <!-- Crash -->
     <string name="crash_info">An unexpected error occurred.\nSorry for the inconvenience.</string>

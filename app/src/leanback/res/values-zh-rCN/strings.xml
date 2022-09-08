@@ -16,13 +16,10 @@
     <string name="search_hot">热搜</string>
 
     <!-- Collect -->
-    <string name="collect_result">”<xliff:g name="name">%s</xliff:g>”的搜索结果</string>
+    <string name="collect_result">“<xliff:g name="name">%s</xliff:g>”的搜索结果</string>
     <string name="collect_all">全部</string>
 
     <!-- Push -->
     <string name="push_info">手机或电脑连接同一个局域网，扫描 QR Code 或浏览器输入地址\n<xliff:g name="name">%s</xliff:g></string>
-
-    <!-- Dialog -->
-    <string name="dialog_config_info">手机或电脑连接同一个局域网\n扫描 QR Code 或浏览器输入地址\n<xliff:g name="name">%s</xliff:g></string>
 
 </resources>

@@ -5,7 +5,10 @@ import android.net.Uri;
 
 import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.bean.Result;
+import com.github.catvod.crawler.SpiderDebug;
 import com.google.android.exoplayer2.C;
+import com.google.android.exoplayer2.DefaultRenderersFactory;
+import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.MediaItem;
 import com.google.android.exoplayer2.ext.rtmp.RtmpDataSource;
 import com.google.android.exoplayer2.source.DefaultMediaSourceFactory;
@@ -22,6 +25,12 @@ import java.util.Map;
 
 public class ExoUtil {
 
+    static ExoPlayer create() {
+        DefaultRenderersFactory renderersFactory = new DefaultRenderersFactory(App.get());
+        renderersFactory.setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER);
+        return new ExoPlayer.Builder(App.get()).setRenderersFactory(renderersFactory).build();
+    }
+
     public static CaptionStyleCompat getCaptionStyle() {
         return new CaptionStyleCompat(Color.WHITE, Color.TRANSPARENT, Color.TRANSPARENT, CaptionStyleCompat.EDGE_TYPE_OUTLINE, Color.BLACK, null);
     }
@@ -35,6 +44,7 @@ public class ExoUtil {
     }
 
     private static MediaSource getSource(Map<String, String> headers, String url, MediaItem.SubtitleConfiguration config) {
+        SpiderDebug.log(url);
         Uri videoUri = Uri.parse(url);
         DataSource.Factory factory = getFactory(headers, url);
         MediaItem.Builder builder = new MediaItem.Builder().setUri(videoUri);
