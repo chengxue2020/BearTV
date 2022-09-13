@@ -72,6 +72,9 @@ public class Vod {
     @SerializedName("vod_play_url")
     private String vodPlayUrl;
 
+    @SerializedName("vod_tag")
+    private String vodTag;
+
     @Path("dl")
     @ElementList(entry = "dd", required = false, inline = true)
     private List<Flag> vodFlags;
@@ -132,6 +135,10 @@ public class Vod {
         return TextUtils.isEmpty(vodPlayUrl) ? "" : vodPlayUrl;
     }
 
+    public String getVodTag() {
+        return TextUtils.isEmpty(vodTag) ? "" : vodTag;
+    }
+
     public List<Flag> getVodFlags() {
         return vodFlags = vodFlags == null ? new ArrayList<>() : vodFlags;
     }
@@ -158,6 +165,10 @@ public class Vod {
 
     public int getRemarkVisible() {
         return getVodRemarks().isEmpty() ? View.GONE : View.VISIBLE;
+    }
+
+    public boolean shouldSearch() {
+        return getVodId().isEmpty() || getVodId().startsWith("msearch:");
     }
 
     public void setVodFlags() {
