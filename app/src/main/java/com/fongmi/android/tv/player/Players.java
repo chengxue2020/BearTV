@@ -9,9 +9,11 @@ import com.fongmi.android.tv.event.PlayerEvent;
 import com.fongmi.android.tv.ui.custom.CustomWebView;
 import com.fongmi.android.tv.utils.Notify;
 import com.fongmi.android.tv.utils.ResUtil;
+import com.google.android.exoplayer2.DefaultRenderersFactory;
 import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.PlaybackException;
 import com.google.android.exoplayer2.Player;
+import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
 import com.google.android.exoplayer2.util.Util;
 
 import java.util.Formatter;
@@ -20,11 +22,14 @@ import java.util.Map;
 
 public class Players implements Player.Listener, ParseTask.Callback {
 
+    private DefaultRenderersFactory renderers;
+    private DefaultTrackSelector track;
     private CustomWebView webView;
     private StringBuilder builder;
     private Formatter formatter;
     private ExoPlayer exoPlayer;
     private ParseTask parseTask;
+
     private int retry;
 
     private static class Loader {
@@ -39,8 +44,12 @@ public class Players implements Player.Listener, ParseTask.Callback {
         builder = new StringBuilder();
         webView = new CustomWebView(App.get());
         formatter = new Formatter(builder, Locale.getDefault());
-        exoPlayer = ExoUtil.create();
+        exoPlayer = create();
         exoPlayer.addListener(this);
+    }
+
+    private ExoPlayer create() {
+        return new ExoPlayer.Builder(App.get()).setRenderersFactory(renderers = new DefaultRenderersFactory(App.get()).setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON)).setTrackSelector(track = new DefaultTrackSelector(App.get())).build();
     }
 
     public ExoPlayer exo() {
@@ -70,7 +79,8 @@ public class Players implements Player.Listener, ParseTask.Callback {
 
     public void addSpeed() {
         float speed = exo().getPlaybackParameters().speed;
-        speed = speed == 2 ? 0.25f : speed + 0.25f;
+        float addon = speed >= 2 ? 1f : 0.25f;
+        speed = speed == 5 ? 0.25f : speed + addon;
         exo().setPlaybackSpeed(speed);
     }
 
