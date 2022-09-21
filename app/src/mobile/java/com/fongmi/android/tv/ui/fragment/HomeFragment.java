@@ -13,7 +13,6 @@ import com.fongmi.android.tv.api.ApiConfig;
 import com.fongmi.android.tv.bean.History;
 import com.fongmi.android.tv.bean.Vod;
 import com.fongmi.android.tv.databinding.FragmentHomeBinding;
-import com.fongmi.android.tv.db.AppDatabase;
 import com.fongmi.android.tv.model.SiteViewModel;
 import com.fongmi.android.tv.ui.activity.BaseFragment;
 import com.fongmi.android.tv.ui.adapter.HistoryAdapter;
@@ -23,9 +22,13 @@ import com.fongmi.android.tv.ui.custom.SpaceItemDecoration;
 public class HomeFragment extends BaseFragment implements VodAdapter.OnClickListener, HistoryAdapter.OnClickListener {
 
     private FragmentHomeBinding mBinding;
-    private SiteViewModel mSiteViewModel;
     private HistoryAdapter mHistoryAdapter;
-    private VodAdapter mRecommendAdapter;
+    private SiteViewModel mViewModel;
+    private VodAdapter mVodAdapter;
+
+    public static HomeFragment newInstance() {
+        return new HomeFragment();
+    }
 
     @Override
     protected ViewBinding getBinding(@NonNull LayoutInflater inflater, @Nullable ViewGroup container) {
@@ -53,27 +56,33 @@ public class HomeFragment extends BaseFragment implements VodAdapter.OnClickList
         mBinding.recommend.setHasFixedSize(true);
         mBinding.recommend.setLayoutManager(new GridLayoutManager(getContext(), 3));
         mBinding.recommend.addItemDecoration(new SpaceItemDecoration(3, 16));
-        mBinding.recommend.setAdapter(mRecommendAdapter = new VodAdapter(this));
+        mBinding.recommend.setAdapter(mVodAdapter = new VodAdapter(this));
     }
 
     private void setViewModel() {
-        mSiteViewModel = new ViewModelProvider(this).get(SiteViewModel.class);
-        mSiteViewModel.result.observe(getViewLifecycleOwner(), result -> {
-            if (result != null) mRecommendAdapter.addAll(result.getList());
+        mViewModel = new ViewModelProvider(this).get(SiteViewModel.class);
+        mViewModel.result.observe(getViewLifecycleOwner(), result -> {
+            if (result != null) mVodAdapter.addAll(result.getList());
         });
     }
 
     private void getVideo() {
         if (ApiConfig.get().getHome().getKey().isEmpty()) return;
-        mSiteViewModel.homeContent();
+        mViewModel.homeContent();
     }
 
     private void getHistory() {
-        mHistoryAdapter.addAll(AppDatabase.get().getHistoryDao().getAll());
+        mHistoryAdapter.addAll(History.get());
     }
 
     @Override
     public void onItemClick(Vod item) {
+
+    }
+
+    @Override
+    public boolean onLongClick(Vod item) {
+        return true;
     }
 
     @Override
@@ -81,14 +90,7 @@ public class HomeFragment extends BaseFragment implements VodAdapter.OnClickList
     }
 
     @Override
-    public void onItemDelete(History item) {
-
-    }
-
-    @Override
-    public boolean onLongClick() {
-        mHistoryAdapter.setDelete(true);
-        mHistoryAdapter.notifyDataSetChanged();
-        return true;
+    public boolean onLongClick(History item) {
+        return false;
     }
 }
