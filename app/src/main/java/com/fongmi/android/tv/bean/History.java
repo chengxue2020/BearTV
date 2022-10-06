@@ -1,6 +1,7 @@
 package com.fongmi.android.tv.bean;
 
 import androidx.annotation.NonNull;
+import androidx.leanback.widget.ArrayObjectAdapter;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
@@ -182,11 +183,15 @@ public class History {
         AppDatabase.get().getHistoryDao().delete(cid);
     }
 
+    private void checkOpEd(History item) {
+        if (getOpening() == 0) setOpening(item.getOpening());
+        if (getEnding() == 0) setEnding(item.getEnding());
+    }
+
     private void checkMerge(List<History> items) {
         for (History item : items) {
             if (getKey().equals(item.getKey()) || Math.abs(item.getDuration() - getDuration()) > 10 * 60 * 1000) continue;
-            if (getOpening() == 0) setOpening(item.getOpening());
-            if (getEnding() == 0) setEnding(item.getEnding());
+            checkOpEd(item);
             item.delete();
         }
     }
@@ -202,5 +207,24 @@ public class History {
     public History delete() {
         AppDatabase.get().getHistoryDao().delete(ApiConfig.getCid(), getKey());
         return this;
+    }
+
+    public void findEpisode(ArrayObjectAdapter adapter) {
+        Vod.Flag flag = (Vod.Flag) adapter.get(0);
+        setVodFlag(flag.getFlag());
+        setVodRemarks(flag.getEpisodes().get(0).getName());
+        for (History item : AppDatabase.get().getHistoryDao().findByName(ApiConfig.getCid(), getVodName())) {
+            if (getPosition() > 0) break;
+            for (int i = 0; i < adapter.size(); i++) {
+                flag = (Vod.Flag) adapter.get(i);
+                Vod.Flag.Episode episode = flag.find(item.getVodRemarks());
+                if (episode == null) continue;
+                setVodFlag(flag.getFlag());
+                setPosition(item.getPosition());
+                setVodRemarks(episode.getName());
+                checkOpEd(item);
+                break;
+            }
+        }
     }
 }

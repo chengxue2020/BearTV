@@ -55,9 +55,18 @@ public class CustomWebView extends WebView {
         setWebViewClient(webViewClient());
     }
 
-    public void start(String url, ParseTask.Callback callback) {
+    private void setUserAgent(Map<String, String> headers) {
+        for (String key : headers.keySet()) {
+            if (key.equalsIgnoreCase("user-agent")) {
+                getSettings().setUserAgentString(headers.get(key));
+                break;
+            }
+        }
+    }
+
+    public void start(String url, Map<String, String> headers, ParseTask.Callback callback) {
         this.callback = callback;
-        stopLoading();
+        setUserAgent(headers);
         loadUrl(url);
         retry = 0;
     }

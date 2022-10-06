@@ -22,20 +22,22 @@ import dalvik.system.DexClassLoader;
 public class JarLoader {
 
     private final ConcurrentHashMap<String, DexClassLoader> loaders;
-    private final ConcurrentHashMap<String, Spider> spiders;
     private final ConcurrentHashMap<String, Method> methods;
+    private final ConcurrentHashMap<String, Spider> spiders;
     private String current;
 
     public JarLoader() {
         this.loaders = new ConcurrentHashMap<>();
-        this.spiders = new ConcurrentHashMap<>();
         this.methods = new ConcurrentHashMap<>();
+        this.spiders = new ConcurrentHashMap<>();
+        this.current = "";
     }
 
     public void clear() {
         this.loaders.clear();
-        this.spiders.clear();
         this.methods.clear();
+        this.spiders.clear();
+        this.current = "";
     }
 
     public void load(String key, File file) {
@@ -47,19 +49,27 @@ public class JarLoader {
             loaders.put(key, loader);
             Class<?> classProxy = loader.loadClass("com.github.catvod.spider.Proxy");
             methods.put(key, classProxy.getMethod("proxy", Map.class));
-        } catch (Exception ignored) {
-            ignored.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
-    public void parseJar(String key, String jar) throws Exception {
+    private File download(String jar) {
+        try {
+            return FileUtil.write(FileUtil.getJar(jar), OKHttp.newCall(jar).execute().body().bytes());
+        } catch (Exception e) {
+            return FileUtil.getJar(jar);
+        }
+    }
+
+    public void parseJar(String key, String jar) {
         String[] texts = jar.split(";md5;");
         String md5 = jar.startsWith("http") && texts.length > 1 ? texts[1].trim() : "";
         jar = texts[0];
         if (md5.length() > 0 && FileUtil.equals(jar, md5)) {
             load(key, FileUtil.getJar(jar));
         } else if (jar.startsWith("http")) {
-            load(key, FileUtil.write(FileUtil.getJar(jar), OKHttp.newCall(jar).execute().body().bytes()));
+            load(key, download(jar));
         } else if (jar.startsWith("file")) {
             load(key, FileUtil.getLocal(jar));
         } else if (!jar.isEmpty()) {
@@ -69,13 +79,12 @@ public class JarLoader {
 
     public Spider getSpider(String key, String api, String ext, String jar) {
         try {
-            current = FileUtil.getMD5(jar);
-            api = api.replace("csp_", "");
-            if (spiders.containsKey(key)) return spiders.get(key);
+            String spKey = (current = FileUtil.getMD5(jar)) + key;
+            if (spiders.containsKey(spKey)) return spiders.get(spKey);
             if (!loaders.containsKey(current)) parseJar(current, jar);
-            Spider spider = (Spider) loaders.get(current).loadClass("com.github.catvod.spider." + api).newInstance();
+            Spider spider = (Spider) loaders.get(current).loadClass("com.github.catvod.spider." + api.replace("csp_", "")).newInstance();
             spider.init(App.get(), ext);
-            spiders.put(key, spider);
+            spiders.put(spKey, spider);
             return spider;
         } catch (Exception e) {
             e.printStackTrace();

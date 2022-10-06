@@ -7,6 +7,7 @@ import androidx.annotation.NonNull;
 
 import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.utils.ResUtil;
+import com.fongmi.android.tv.utils.Utils;
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
 import com.google.gson.reflect.TypeToken;
@@ -200,16 +201,8 @@ public class Vod {
 
         private boolean activated;
 
-        public static Flag objectFrom(String str) {
-            return new Gson().fromJson(str, Flag.class);
-        }
-
-        public Flag() {
-            this.episodes = new ArrayList<>();
-        }
-
         public Flag(String flag) {
-            this();
+            this.episodes = new ArrayList<>();
             this.flag = flag;
         }
 
@@ -225,6 +218,14 @@ public class Vod {
             return episodes;
         }
 
+        public boolean isActivated() {
+            return activated;
+        }
+
+        public void setActivated(boolean activated) {
+            this.activated = activated;
+        }
+
         public void createEpisode(String data) {
             String[] urls = data.contains("#") ? data.split("#") : new String[]{data};
             String play = ResUtil.getString(R.string.play);
@@ -235,17 +236,19 @@ public class Vod {
             }
         }
 
-        public boolean isActivated() {
-            return activated;
-        }
-
-        public void setActivated(boolean activated) {
-            this.activated = activated;
-        }
-
         public void toggle(boolean activated, Episode episode) {
             if (activated) for (Episode item : getEpisodes()) item.setActivated(episode);
             else for (Episode item : getEpisodes()) item.deactivated();
+        }
+
+        public Episode find(String remarks) {
+            int number = Utils.getDigit(remarks);
+            if (getEpisodes().size() == 1) return getEpisodes().get(0);
+            for (Vod.Flag.Episode item : getEpisodes()) if (item.rule1(remarks)) return item;
+            for (Vod.Flag.Episode item : getEpisodes()) if (item.rule2(number)) return item;
+            for (Vod.Flag.Episode item : getEpisodes()) if (item.rule3(remarks)) return item;
+            for (Vod.Flag.Episode item : getEpisodes()) if (item.rule4(remarks)) return item;
+            return null;
         }
 
         @Override
@@ -269,11 +272,14 @@ public class Vod {
             @SerializedName("url")
             private final String url;
 
+            private final int number;
+
             private boolean activated;
 
             public Episode(String name, String url) {
                 this.name = name;
                 this.url = url;
+                this.number = Utils.getDigit(name);
             }
 
             public String getName() {
@@ -284,16 +290,36 @@ public class Vod {
                 return url;
             }
 
+            public int getNumber() {
+                return number;
+            }
+
             public boolean isActivated() {
                 return activated;
             }
 
-            private void deactivated() {
+            public void deactivated() {
                 this.activated = false;
             }
 
             private void setActivated(Episode item) {
                 this.activated = item.equals(this);
+            }
+
+            public boolean rule1(String name) {
+                return getName().equalsIgnoreCase(name);
+            }
+
+            public boolean rule2(int number) {
+                return getNumber() == number && number != -1;
+            }
+
+            public boolean rule3(String name) {
+                return getName().toLowerCase().contains(name.toLowerCase());
+            }
+
+            public boolean rule4(String name) {
+                return name.toLowerCase().contains(getName().toLowerCase());
             }
 
             @Override
