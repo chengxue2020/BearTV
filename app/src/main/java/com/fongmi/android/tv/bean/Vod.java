@@ -161,7 +161,7 @@ public class Vod {
     }
 
     public int getYearVisible() {
-        return getSite() != null || getVodYear().isEmpty() ? View.GONE : View.VISIBLE;
+        return getSite() != null || getVodYear().length() < 4 ? View.GONE : View.VISIBLE;
     }
 
     public int getRemarkVisible() {
@@ -200,6 +200,10 @@ public class Vod {
         private List<Episode> episodes;
 
         private boolean activated;
+
+        public Flag() {
+            this.episodes = new ArrayList<>();
+        }
 
         public Flag(String flag) {
             this.episodes = new ArrayList<>();
