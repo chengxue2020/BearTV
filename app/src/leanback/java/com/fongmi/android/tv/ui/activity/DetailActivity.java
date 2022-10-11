@@ -116,11 +116,15 @@ public class DetailActivity extends BaseActivity implements CustomKeyDown.Listen
     }
 
     public static void start(Activity activity, String key, String id) {
+        start(activity, key, id, false);
+    }
+
+    public static void start(Activity activity, String key, String id, boolean clear) {
         Intent intent = new Intent(activity, DetailActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        if (clear) intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         intent.putExtra("key", key);
         intent.putExtra("id", id);
-        activity.startActivity(intent);
+        activity.startActivityForResult(intent, 1000);
     }
 
     @Override
@@ -644,6 +648,14 @@ public class DetailActivity extends BaseActivity implements CustomKeyDown.Listen
     public void onKeyCenter() {
         if (mPlayers.isPlaying()) onPause(true);
         else onPlay(0);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode != RESULT_OK) return;
+        setResult(RESULT_OK);
+        finish();
     }
 
     @Override
