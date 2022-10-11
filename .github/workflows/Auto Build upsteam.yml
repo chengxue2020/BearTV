@@ -9,7 +9,7 @@ on:
 env:
   userName: FongMi
   repoName: TV
-  branchName: main
+  branchName: release
   appName: AlphaTV
 
 jobs:
