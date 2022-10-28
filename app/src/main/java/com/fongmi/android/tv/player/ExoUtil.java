@@ -6,6 +6,7 @@ import android.net.Uri;
 import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.bean.Result;
 import com.fongmi.android.tv.utils.FileUtil;
+import com.github.catvod.crawler.SpiderDebug;
 import com.google.android.exoplayer2.MediaItem;
 import com.google.android.exoplayer2.database.DatabaseProvider;
 import com.google.android.exoplayer2.database.StandaloneDatabaseProvider;
@@ -19,7 +20,6 @@ import com.google.android.exoplayer2.upstream.cache.Cache;
 import com.google.android.exoplayer2.upstream.cache.CacheDataSource;
 import com.google.android.exoplayer2.upstream.cache.NoOpCacheEvictor;
 import com.google.android.exoplayer2.upstream.cache.SimpleCache;
-import com.google.android.exoplayer2.util.MimeTypes;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,17 +35,17 @@ public class ExoUtil {
         return new CaptionStyleCompat(Color.WHITE, Color.TRANSPARENT, Color.TRANSPARENT, CaptionStyleCompat.EDGE_TYPE_OUTLINE, Color.BLACK, null);
     }
 
-    public static MediaSource getSource(Result result) {
-        return getSource(result.getHeaders(), result.getPlayUrl() + result.getUrl(), getConfig(result));
+    public static MediaSource getSource(Result result, int errorCode) {
+        return getSource(result.getHeaders(), result.getPlayUrl() + result.getUrl(), errorCode, getConfig(result));
     }
 
-    public static MediaSource getSource(Map<String, String> headers, String url) {
-        return getSource(headers, url, Collections.emptyList());
+    public static MediaSource getSource(Map<String, String> headers, String url, int errorCode) {
+        return getSource(headers, url, errorCode, Collections.emptyList());
     }
 
-    private static MediaSource getSource(Map<String, String> headers, String url, List<MediaItem.SubtitleConfiguration> config) {
-        MediaItem.Builder builder = new MediaItem.Builder().setUri(Uri.parse(url));
-        if (url.contains("m3u8")) builder.setMimeType(MimeTypes.APPLICATION_M3U8);
+    private static MediaSource getSource(Map<String, String> headers, String url, int errorCode, List<MediaItem.SubtitleConfiguration> config) {
+        SpiderDebug.log(errorCode + "," + url + "," + headers);
+        MediaItem.Builder builder = new MediaItem.Builder().setUri(Uri.parse(url.trim()));
         if (config.size() > 0) builder.setSubtitleConfigurations(config);
         return new DefaultMediaSourceFactory(getDataSourceFactory(headers)).createMediaSource(builder.build());
     }
