@@ -107,12 +107,20 @@ public class Prefers {
         put("keyword", keyword);
     }
 
-    public static int getScale() {
-        return getInt("scale");
+    public static int getVodScale() {
+        return getInt("vodScale");
     }
 
-    public static void putScale(int scale) {
-        put("scale", scale);
+    public static void putVodScale(int scale) {
+        put("vodScale", scale);
+    }
+
+    public static int getLiveScale() {
+        return getInt("liveScale", getVodScale());
+    }
+
+    public static void putLiveScale(int scale) {
+        put("liveScale", scale);
     }
 
     public static boolean getUpdate() {

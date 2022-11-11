@@ -14,6 +14,7 @@ import com.google.android.exoplayer2.DefaultRenderersFactory;
 import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.PlaybackException;
 import com.google.android.exoplayer2.Player;
+import com.google.android.exoplayer2.analytics.AnalyticsListener;
 import com.google.android.exoplayer2.audio.AudioAttributes;
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
 import com.google.android.exoplayer2.util.Util;
@@ -22,7 +23,7 @@ import java.util.Formatter;
 import java.util.Locale;
 import java.util.Map;
 
-public class Players implements Player.Listener, ParseTask.Callback {
+public class Players implements Player.Listener, AnalyticsListener, ParseTask.Callback {
 
     private StringBuilder builder;
     private Formatter formatter;
@@ -44,6 +45,7 @@ public class Players implements Player.Listener, ParseTask.Callback {
         DefaultRenderersFactory factory = new DefaultRenderersFactory(App.get()).setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON);
         exoPlayer = new ExoPlayer.Builder(App.get()).setLoadControl(new DefaultLoadControl()).setRenderersFactory(factory).setTrackSelector(selector).build();
         exoPlayer.setAudioAttributes(AudioAttributes.DEFAULT, true);
+        exoPlayer.addAnalyticsListener(this);
         exoPlayer.setPlayWhenReady(true);
         exoPlayer.addListener(this);
     }
@@ -80,8 +82,9 @@ public class Players implements Player.Listener, ParseTask.Callback {
         exoPlayer.setPlaybackSpeed(speed);
     }
 
-    public void resetSpeed() {
-        exoPlayer.setPlaybackSpeed(1f);
+    public void toggleSpeed() {
+        float speed = exoPlayer.getPlaybackParameters().speed;
+        exoPlayer.setPlaybackSpeed(speed == 1 ? 3f : 1f);
     }
 
     public String getTime(long time) {
@@ -104,11 +107,11 @@ public class Players implements Player.Listener, ParseTask.Callback {
     }
 
     public void seekTo(int time) {
-        exoPlayer.seekTo(getCurrentPosition() + time);
+        if (time != 0) exoPlayer.seekTo(getCurrentPosition() + time);
     }
 
     public void seekTo(long time) {
-        exoPlayer.seekTo(time);
+        if (time != 0) exoPlayer.seekTo(time);
     }
 
     public boolean isPlaying() {
@@ -199,5 +202,10 @@ public class Players implements Player.Listener, ParseTask.Callback {
     @Override
     public void onPlaybackStateChanged(int state) {
         PlayerEvent.state(state);
+    }
+
+    @Override
+    public void onAudioSinkError(@NonNull EventTime eventTime, @NonNull Exception audioSinkError) {
+        seekTo(200);
     }
 }

@@ -29,9 +29,11 @@ public class History {
     private long ending;
     private long position;
     private long duration;
+    private int scale;
     private int cid;
 
     public History() {
+        this.scale = -1;
     }
 
     @NonNull
@@ -139,6 +141,14 @@ public class History {
         this.duration = duration;
     }
 
+    public int getScale() {
+        return scale;
+    }
+
+    public void setScale(int scale) {
+        this.scale = scale;
+    }
+
     public int getCid() {
         return cid;
     }
@@ -196,12 +206,11 @@ public class History {
         }
     }
 
-    public History update(long position, long duration) {
+    public void update(long position, long duration) {
         setPosition(position);
         setDuration(duration);
         checkMerge(AppDatabase.get().getHistoryDao().findByName(ApiConfig.getCid(), getVodName()));
         AppDatabase.get().getHistoryDao().insertOrUpdate(this);
-        return this;
     }
 
     public History delete() {
