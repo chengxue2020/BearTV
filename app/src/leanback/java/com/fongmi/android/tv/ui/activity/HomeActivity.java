@@ -17,6 +17,7 @@ import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.api.ApiConfig;
 import com.fongmi.android.tv.api.LiveConfig;
+import com.fongmi.android.tv.api.SoLoader;
 import com.fongmi.android.tv.api.WallConfig;
 import com.fongmi.android.tv.bean.Func;
 import com.fongmi.android.tv.bean.History;
@@ -72,6 +73,7 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
         ApiConfig.get().init().load(getCallback());
         mBinding.progressLayout.showProgress();
         Updater.create(this).start();
+        SoLoader.get().load();
         Server.get().start();
         setRecyclerView();
         setViewModel();
@@ -120,18 +122,23 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
             @Override
             public void success() {
                 mBinding.progressLayout.showContent();
-                mBinding.recycler.requestFocus();
                 getHistory();
                 getVideo();
+                setFocus();
             }
 
             @Override
             public void error(int resId) {
                 mBinding.progressLayout.showContent();
-                mBinding.recycler.requestFocus();
                 Notify.show(resId);
+                setFocus();
             }
         };
+    }
+
+    private void setFocus() {
+        mBinding.recycler.requestFocus();
+        App.post(() -> mBinding.title.setFocusable(true), 500);
     }
 
     private void getVideo() {
@@ -320,6 +327,7 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
             Notify.show(R.string.app_exit);
             App.post(() -> confirm = false, 1000);
         } else {
+            super.onBackPressed();
             finish();
         }
     }
@@ -331,6 +339,5 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
         LiveConfig.get().clear();
         ApiConfig.get().clear();
         Server.get().stop();
-        System.exit(0);
     }
 }
