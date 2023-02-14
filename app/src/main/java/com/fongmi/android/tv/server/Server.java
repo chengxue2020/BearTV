@@ -34,6 +34,10 @@ public class Server implements Nano.Listener {
         return "http://" + (local ? "127.0.0.1" : getIP()) + ":" + port;
     }
 
+    public String getAddress(String path) {
+        return getAddress(true) + "/" + path;
+    }
+
     public void start() {
         if (nano != null) return;
         do {

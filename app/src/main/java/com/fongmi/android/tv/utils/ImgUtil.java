@@ -31,25 +31,28 @@ public class ImgUtil {
     }
 
     public static void loadKeep(String url, ImageView view) {
-        Glide.with(App.get()).load(Utils.checkProxy(url)).error(R.drawable.ic_img_error).placeholder(R.drawable.ic_img_loading).into(view);
+        view.setScaleType(ImageView.ScaleType.CENTER);
+        Glide.with(App.get()).asBitmap().load(Utils.checkProxy(url)).error(R.drawable.ic_img_error).placeholder(R.drawable.ic_img_loading).listener(getListener(view)).into(view);
     }
 
     public static void loadHistory(String url, ImageView view) {
-        Glide.with(App.get()).load(Utils.checkProxy(url)).error(R.drawable.ic_img_error).placeholder(R.drawable.ic_img_loading).into(view);
+        view.setScaleType(ImageView.ScaleType.CENTER);
+        Glide.with(App.get()).asBitmap().load(Utils.checkProxy(url)).error(R.drawable.ic_img_error).placeholder(R.drawable.ic_img_loading).listener(getListener(view)).into(view);
     }
 
     public static void loadLive(String url, ImageView view) {
         view.setVisibility(TextUtils.isEmpty(url) ? View.GONE : View.VISIBLE);
-        if (TextUtils.isEmpty(url)) view.setImageResource(R.drawable.ic_live);
-        else Glide.with(App.get()).asBitmap().load(url).skipMemoryCache(true).dontAnimate().signature(new ObjectKey(url)).error(R.drawable.ic_live).into(view);
+        if (TextUtils.isEmpty(url)) view.setImageResource(R.drawable.ic_img_empty);
+        else Glide.with(App.get()).asBitmap().load(url).skipMemoryCache(true).dontAnimate().signature(new ObjectKey(url)).error(R.drawable.ic_img_empty).into(view);
     }
 
     public static GlideUrl getUrl(String url) {
+        String param = null;
         LazyHeaders.Builder builder = new LazyHeaders.Builder();
-        if (url.contains("@Cookie=")) builder.addHeader("Cookie", url.split("@Cookie=")[1].split("@")[0]);
-        if (url.contains("@Referer=")) builder.addHeader("Referer", url.split("@Referer=")[1].split("@")[0]);
-        if (url.contains("@User-Agent=")) builder.addHeader("User-Agent", url.split("@User-Agent=")[1].split("@")[0]);
-        return new GlideUrl(url.split("@")[0], builder.build());
+        if (url.contains("@Cookie=")) builder.addHeader("Cookie", param = url.split("@Cookie=")[1].split("@")[0]);
+        if (url.contains("@Referer=")) builder.addHeader("Referer", param = url.split("@Referer=")[1].split("@")[0]);
+        if (url.contains("@User-Agent=")) builder.addHeader("User-Agent", param = url.split("@User-Agent=")[1].split("@")[0]);
+        return new GlideUrl(param == null ? url : url.split("@")[0], builder.build());
     }
 
     private static RequestListener<Bitmap> getListener(ImageView view) {

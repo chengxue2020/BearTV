@@ -1,5 +1,6 @@
 package com.fongmi.android.tv.ui.activity;
 
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -10,9 +11,19 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.viewbinding.ViewBinding;
 
+import com.fongmi.android.tv.event.RefreshEvent;
+
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
+
 public abstract class BaseFragment extends Fragment {
 
     protected abstract ViewBinding getBinding(@NonNull LayoutInflater inflater, @Nullable ViewGroup container);
+
+    protected int getSpanCount() {
+        return getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT ? 3 : 6;
+    }
 
     @Nullable
     @Override
@@ -22,6 +33,7 @@ public abstract class BaseFragment extends Fragment {
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        EventBus.getDefault().register(this);
         initView();
         initEvent();
     }
@@ -30,5 +42,15 @@ public abstract class BaseFragment extends Fragment {
     }
 
     protected void initEvent() {
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onRefreshEvent(RefreshEvent event) {
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        EventBus.getDefault().unregister(this);
     }
 }
