@@ -6,6 +6,7 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.bean.Class;
 import com.fongmi.android.tv.databinding.AdapterTypeBinding;
 import com.fongmi.android.tv.utils.ResUtil;
@@ -20,7 +21,7 @@ public class TypeAdapter extends RecyclerView.Adapter<TypeAdapter.ViewHolder> {
 
     public TypeAdapter(OnClickListener listener) {
         this.mListener = listener;
-        this.mItems = new ArrayList<>(List.of(home()));
+        this.mItems = new ArrayList<>();
     }
 
     public interface OnClickListener {
@@ -40,7 +41,7 @@ public class TypeAdapter extends RecyclerView.Adapter<TypeAdapter.ViewHolder> {
 
     private Class home() {
         Class type = new Class();
-        type.setTypeName("首頁");
+        type.setTypeName(ResUtil.getString(R.string.home));
         type.setTypeId("home");
         type.setActivated(true);
         return type;
@@ -87,8 +88,6 @@ public class TypeAdapter extends RecyclerView.Adapter<TypeAdapter.ViewHolder> {
         Class item = mItems.get(position);
         holder.binding.text.setText(item.getTypeName());
         holder.binding.text.setActivated(item.isActivated());
-        holder.binding.text.setCompoundDrawablePadding(ResUtil.dp2px(4));
-        holder.binding.text.setCompoundDrawablesRelativeWithIntrinsicBounds(0, 0, item.getIcon(), 0);
         holder.binding.getRoot().setOnClickListener(v -> mListener.onItemClick(position, item));
     }
 }

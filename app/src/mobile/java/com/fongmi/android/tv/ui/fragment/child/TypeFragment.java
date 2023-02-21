@@ -11,43 +11,33 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.viewbinding.ViewBinding;
 
+import com.fongmi.android.tv.Product;
 import com.fongmi.android.tv.api.ApiConfig;
-import com.fongmi.android.tv.bean.Filter;
 import com.fongmi.android.tv.bean.Vod;
 import com.fongmi.android.tv.databinding.FragmentTypeBinding;
-import com.fongmi.android.tv.event.RefreshEvent;
 import com.fongmi.android.tv.model.SiteViewModel;
 import com.fongmi.android.tv.ui.activity.BaseFragment;
 import com.fongmi.android.tv.ui.activity.DetailActivity;
-import com.fongmi.android.tv.ui.adapter.FilterAdapter;
-import com.fongmi.android.tv.ui.adapter.ValueAdapter;
 import com.fongmi.android.tv.ui.adapter.VodAdapter;
 import com.fongmi.android.tv.ui.custom.CustomScroller;
-
-import org.greenrobot.eventbus.Subscribe;
-import org.greenrobot.eventbus.ThreadMode;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-public class TypeFragment extends BaseFragment implements CustomScroller.Callback, ValueAdapter.OnClickListener, VodAdapter.OnClickListener {
+public class TypeFragment extends BaseFragment implements CustomScroller.Callback, VodAdapter.OnClickListener {
 
     private GridLayoutManager mGridLayoutManager;
     private HashMap<String, String> mExtends;
     private FragmentTypeBinding mBinding;
-    private FilterAdapter mFilterAdapter;
     private CustomScroller mScroller;
     private SiteViewModel mViewModel;
     private VodAdapter mVodAdapter;
-    private List<Filter> mFilters;
     private List<String> mTypeIds;
-    private boolean mOpen;
 
-    public static TypeFragment newInstance(String typeId, String filter, boolean folder) {
+    public static TypeFragment newInstance(String typeId, boolean folder) {
         Bundle args = new Bundle();
         args.putString("typeId", typeId);
-        args.putString("filter", filter);
         args.putBoolean("folder", folder);
         TypeFragment fragment = new TypeFragment();
         fragment.setArguments(args);
@@ -56,10 +46,6 @@ public class TypeFragment extends BaseFragment implements CustomScroller.Callbac
 
     private String getTypeId() {
         return getArguments().getString("typeId");
-    }
-
-    private String getFilter() {
-        return getArguments().getString("filter");
     }
 
     private boolean isFolder() {
@@ -76,7 +62,6 @@ public class TypeFragment extends BaseFragment implements CustomScroller.Callbac
         mTypeIds = new ArrayList<>();
         mExtends = new HashMap<>();
         mScroller = new CustomScroller(this);
-        mFilters = Filter.arrayFrom(getFilter());
         mBinding.progressLayout.showProgress();
         setRecyclerView();
         setViewModel();
@@ -86,15 +71,12 @@ public class TypeFragment extends BaseFragment implements CustomScroller.Callbac
     @Override
     protected void initEvent() {
         mBinding.recycler.addOnScrollListener(mScroller = new CustomScroller(this));
-        //mBinding.scroller.setOnScrollChangeListener(mScroller);
     }
 
     private void setRecyclerView() {
-        //mBinding.filter.setHasFixedSize(true);
-        //mBinding.filter.setAdapter(mFilterAdapter = new FilterAdapter(this));
         mBinding.recycler.setHasFixedSize(true);
         mBinding.recycler.setAdapter(mVodAdapter = new VodAdapter(this));
-        mBinding.recycler.setLayoutManager(mGridLayoutManager = new GridLayoutManager(getContext(), getSpanCount()));
+        mBinding.recycler.setLayoutManager(mGridLayoutManager = new GridLayoutManager(getContext(), Product.getColumn(getActivity())));
     }
 
     private void setViewModel() {
@@ -119,30 +101,22 @@ public class TypeFragment extends BaseFragment implements CustomScroller.Callbac
 
     private void getVideo(String typeId, String page) {
         if (isFolder()) mTypeIds.add(typeId);
-        if (isFolder() && !mOpen) mBinding.recycler.scrollToPosition(0);
+        if (isFolder()) mBinding.recycler.scrollToPosition(0);
         if (page.equals("1")) mVodAdapter.clear();
+        if (page.equals("1")) mBinding.progressLayout.showProgress();
         mViewModel.categoryContent(ApiConfig.get().getHome().getKey(), typeId, page, true, mExtends);
-    }
-
-    private void showFilter() {
-        //mBinding.scroller.smoothScrollTo(0, 0);
-        //mFilterAdapter.addAll(mFilters);
-    }
-
-    private void hideFilter() {
-        //mFilterAdapter.clear();
-    }
-
-    public void toggleFilter(boolean open) {
-        if (open) showFilter();
-        else hideFilter();
-        mOpen = open;
     }
 
     private void refresh(int num) {
         String typeId = mTypeIds.get(mTypeIds.size() - num);
         mTypeIds = mTypeIds.subList(0, mTypeIds.size() - num);
         getVideo(typeId, "1");
+    }
+
+    public boolean canBack() {
+        if (mTypeIds.size() == 0) return true;
+        refresh(2);
+        return false;
     }
 
     @Override
@@ -152,9 +126,8 @@ public class TypeFragment extends BaseFragment implements CustomScroller.Callbac
         getVideo(getTypeId(), page);
     }
 
-    @Override
-    public void onItemClick(String key, Filter.Value item) {
-        mExtends.put(key, item.getV());
+    public void setFilter(String key, String value) {
+        mExtends.put(key, value);
         if (isFolder()) refresh(1);
         else getVideo();
     }
@@ -172,18 +145,9 @@ public class TypeFragment extends BaseFragment implements CustomScroller.Callbac
         return true;
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onRefreshEvent(RefreshEvent event) {
-        if (event.getType() == RefreshEvent.Type.IMAGE) mVodAdapter.notifyDataSetChanged();
-    }
-
     @Override
     public void onConfigurationChanged(@NonNull Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-        if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
-            mGridLayoutManager.setSpanCount(getSpanCount());
-        } else if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-            mGridLayoutManager.setSpanCount(getSpanCount());
-        }
+        mGridLayoutManager.setSpanCount(Product.getColumn(getActivity()));
     }
 }
