@@ -44,6 +44,7 @@ import com.fongmi.android.tv.utils.Clock;
 import com.fongmi.android.tv.utils.Notify;
 import com.fongmi.android.tv.utils.ResUtil;
 import com.fongmi.android.tv.utils.Utils;
+import com.google.android.exoplayer2.util.Log;
 import com.google.common.collect.Lists;
 
 import org.greenrobot.eventbus.Subscribe;
@@ -298,9 +299,6 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
         switch (event.getType()) {
             case SEARCH:
                 CollectActivity.start(this, event.getText(), true);
-                break;
-            case UPDATE:
-                Updater.get().force().branch(event.getText()).start();
                 break;
             case PUSH:
                 if (ApiConfig.get().getSite("push_agent") == null) return;
