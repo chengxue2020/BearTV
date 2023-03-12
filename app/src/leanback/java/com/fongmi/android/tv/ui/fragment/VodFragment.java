@@ -21,9 +21,9 @@ import com.fongmi.android.tv.bean.Filter;
 import com.fongmi.android.tv.bean.Vod;
 import com.fongmi.android.tv.databinding.FragmentVodBinding;
 import com.fongmi.android.tv.model.SiteViewModel;
-import com.fongmi.android.tv.ui.activity.BaseFragment;
 import com.fongmi.android.tv.ui.activity.CollectActivity;
 import com.fongmi.android.tv.ui.activity.DetailActivity;
+import com.fongmi.android.tv.ui.base.BaseFragment;
 import com.fongmi.android.tv.ui.custom.CustomRowPresenter;
 import com.fongmi.android.tv.ui.custom.CustomScroller;
 import com.fongmi.android.tv.ui.custom.CustomSelector;
@@ -88,6 +88,10 @@ public class VodFragment extends BaseFragment implements CustomScroller.Callback
         mBinding.progressLayout.showProgress();
         setRecyclerView();
         setViewModel();
+    }
+
+    @Override
+    protected void initData() {
         getVideo();
     }
 
@@ -105,10 +109,11 @@ public class VodFragment extends BaseFragment implements CustomScroller.Callback
     private void setViewModel() {
         mViewModel = new ViewModelProvider(this).get(SiteViewModel.class);
         mViewModel.result.observe(getViewLifecycleOwner(), result -> {
-            mBinding.progressLayout.showContent(isFolder(), result.getList().size());
-            mScroller.endLoading(result.getList().isEmpty());
+            int size = result.getList().size();
+            mBinding.progressLayout.showContent(isFolder(), size);
+            mScroller.endLoading(size == 0);
             addVideo(result.getList());
-            checkPage();
+            checkPage(size);
         });
     }
 
@@ -125,9 +130,9 @@ public class VodFragment extends BaseFragment implements CustomScroller.Callback
         getVideo(getTypeId(), "1");
     }
 
-    private void checkPage() {
-        if (mScroller.getPage() != 1 || mAdapter.size() >= 4 || isFolder()) return;
-        if (mScroller.addPage()) getVideo(getTypeId(), "2");
+    private void checkPage(int count) {
+        if (count == 0 || mAdapter.size() >= 4 || isFolder()) return;
+        getVideo(getTypeId(), String.valueOf(mScroller.addPage()));
     }
 
     private void getVideo(String typeId, String page) {
@@ -202,8 +207,7 @@ public class VodFragment extends BaseFragment implements CustomScroller.Callback
 
     @Override
     public void onItemClick(Vod item) {
-        if (item.shouldSearch()) onLongClick(item);
-        else if (item.isFolder()) getVideo(item.getVodId(), "1");
+        if (item.isFolder()) getVideo(item.getVodId(), "1");
         else DetailActivity.start(getActivity(), getKey(), item.getVodId(), item.getVodName());
     }
 

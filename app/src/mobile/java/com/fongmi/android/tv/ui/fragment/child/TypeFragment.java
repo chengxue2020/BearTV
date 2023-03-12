@@ -16,10 +16,10 @@ import com.fongmi.android.tv.api.ApiConfig;
 import com.fongmi.android.tv.bean.Vod;
 import com.fongmi.android.tv.databinding.FragmentTypeBinding;
 import com.fongmi.android.tv.model.SiteViewModel;
-import com.fongmi.android.tv.ui.activity.BaseFragment;
 import com.fongmi.android.tv.ui.activity.CollectActivity;
 import com.fongmi.android.tv.ui.activity.DetailActivity;
 import com.fongmi.android.tv.ui.adapter.VodAdapter;
+import com.fongmi.android.tv.ui.base.BaseFragment;
 import com.fongmi.android.tv.ui.custom.CustomScroller;
 import com.fongmi.android.tv.ui.fragment.VodFragment;
 
@@ -67,10 +67,8 @@ public class TypeFragment extends BaseFragment implements CustomScroller.Callbac
         mTypeIds = new ArrayList<>();
         mExtends = new HashMap<>();
         mScroller = new CustomScroller(this);
-        mBinding.progressLayout.showProgress();
         setRecyclerView();
         setViewModel();
-        getVideo();
     }
 
     @Override
@@ -85,6 +83,12 @@ public class TypeFragment extends BaseFragment implements CustomScroller.Callbac
         });
     }
 
+    @Override
+    protected void initData() {
+        mBinding.progressLayout.showProgress();
+        getVideo();
+    }
+
     private void setRecyclerView() {
         mBinding.recycler.setHasFixedSize(true);
         mBinding.recycler.setAdapter(mVodAdapter = new VodAdapter(this));
@@ -95,11 +99,12 @@ public class TypeFragment extends BaseFragment implements CustomScroller.Callbac
     private void setViewModel() {
         mViewModel = new ViewModelProvider(this).get(SiteViewModel.class);
         mViewModel.result.observe(getViewLifecycleOwner(), result -> {
-            mBinding.progressLayout.showContent(isFolder(), result.getList().size());
-            mScroller.endLoading(result.getList().isEmpty());
+            int size = result.getList().size();
+            mBinding.progressLayout.showContent(isFolder(), size);
             mBinding.swipeLayout.setRefreshing(false);
+            mScroller.endLoading(size == 0);
             mVodAdapter.addAll(result.getList());
-            checkPage();
+            checkPage(size);
         });
     }
 
@@ -109,9 +114,9 @@ public class TypeFragment extends BaseFragment implements CustomScroller.Callbac
         getVideo(getTypeId(), "1");
     }
 
-    private void checkPage() {
-        if (mScroller.getPage() != 1 || mVodAdapter.getItemCount() >= 40 || isFolder()) return;
-        if (mScroller.addPage()) getVideo(getTypeId(), "2");
+    private void checkPage(int count) {
+        if (count == 0 || mVodAdapter.getItemCount() >= 40 || isFolder()) return;
+        getVideo(getTypeId(), String.valueOf(mScroller.addPage()));
     }
 
     private void getVideo(String typeId, String page) {
@@ -143,8 +148,7 @@ public class TypeFragment extends BaseFragment implements CustomScroller.Callbac
 
     @Override
     public void onItemClick(Vod item) {
-        if (item.shouldSearch()) onLongClick(item);
-        else if (item.isFolder()) getVideo(item.getVodId(), "1");
+        if (item.isFolder()) getVideo(item.getVodId(), "1");
         else DetailActivity.start(getActivity(), item.getVodId(), item.getVodName());
     }
 

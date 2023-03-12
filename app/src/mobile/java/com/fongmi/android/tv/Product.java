@@ -1,16 +1,11 @@
 package com.fongmi.android.tv;
 
 import android.content.Context;
-import android.content.res.Resources;
 
 import com.fongmi.android.tv.utils.Prefers;
 import com.fongmi.android.tv.utils.ResUtil;
 
 public class Product {
-
-    public static Resources hackResources(Resources resources) {
-        return resources;
-    }
 
     public static int getColumn() {
         return Math.abs(Prefers.getSize() - 5);
@@ -24,7 +19,7 @@ public class Product {
     }
 
     public static int[] getSpec(Context context, int space, int column) {
-        int base = ResUtil.getScreenWidthPx(context) - space;
+        int base = ResUtil.getScreenWidth(context) - space;
         int width = base / column;
         int height = (int) (width / 0.75f);
         return new int[]{width, height};

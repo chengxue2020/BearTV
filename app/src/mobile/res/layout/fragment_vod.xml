@@ -21,6 +21,7 @@
             android:layout_height="wrap_content"
             android:layout_marginEnd="16dp"
             android:layout_weight="1"
+            android:singleLine="true"
             android:text="@string/app_name"
             android:textColor="@color/white"
             android:textSize="20sp"
@@ -77,8 +78,10 @@
         android:layout_alignParentEnd="true"
         android:layout_alignParentBottom="true"
         android:layout_margin="16dp"
+        android:visibility="gone"
         app:backgroundTint="@color/blue_500"
         app:srcCompat="@drawable/ic_fab_link"
-        app:tint="@color/white" />
+        app:tint="@color/white"
+        tools:visibility="visible" />
 
 </RelativeLayout>
