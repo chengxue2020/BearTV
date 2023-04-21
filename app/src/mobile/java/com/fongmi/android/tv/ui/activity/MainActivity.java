@@ -1,6 +1,7 @@
 package com.fongmi.android.tv.ui.activity;
 
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.view.MenuItem;
 
@@ -10,19 +11,19 @@ import androidx.viewbinding.ViewBinding;
 
 import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.R;
+import com.fongmi.android.tv.Updater;
 import com.fongmi.android.tv.api.ApiConfig;
 import com.fongmi.android.tv.api.LiveConfig;
-import com.fongmi.android.tv.api.Updater;
 import com.fongmi.android.tv.api.WallConfig;
 import com.fongmi.android.tv.databinding.ActivityMainBinding;
 import com.fongmi.android.tv.event.RefreshEvent;
 import com.fongmi.android.tv.net.Callback;
 import com.fongmi.android.tv.server.Server;
 import com.fongmi.android.tv.ui.base.BaseActivity;
+import com.fongmi.android.tv.ui.custom.FileChooser;
 import com.fongmi.android.tv.ui.custom.FragmentStateManager;
 import com.fongmi.android.tv.ui.fragment.SettingFragment;
 import com.fongmi.android.tv.ui.fragment.VodFragment;
-import com.fongmi.android.tv.ui.custom.FileChooser;
 import com.fongmi.android.tv.utils.Notify;
 import com.google.android.material.navigation.NavigationBarView;
 
@@ -46,7 +47,6 @@ public class MainActivity extends BaseActivity implements NavigationBarView.OnIt
     @Override
     protected void initView(Bundle savedInstanceState) {
         initFragment(savedInstanceState);
-        Notify.progress(this);
         Updater.get().start();
         Server.get().start();
         initConfig();
@@ -87,13 +87,15 @@ public class MainActivity extends BaseActivity implements NavigationBarView.OnIt
             @Override
             public void success() {
                 checkAction(getIntent());
+                RefreshEvent.config();
                 RefreshEvent.video();
             }
 
             @Override
             public void error(int resId) {
+                RefreshEvent.config();
+                RefreshEvent.empty();
                 Notify.show(resId);
-                Notify.dismiss();
             }
         };
     }
@@ -105,11 +107,25 @@ public class MainActivity extends BaseActivity implements NavigationBarView.OnIt
     }
 
     @Override
+    public void onRefreshEvent(RefreshEvent event) {
+        super.onRefreshEvent(event);
+        if (!event.getType().equals(RefreshEvent.Type.CONFIG)) return;
+        mBinding.navigation.getMenu().findItem(R.id.vod).setVisible(true);
+        mBinding.navigation.getMenu().findItem(R.id.setting).setVisible(true);
+    }
+
+    @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
         if (mBinding.navigation.getSelectedItemId() == item.getItemId()) return false;
         if (item.getItemId() == R.id.vod) return mManager.change(0);
         if (item.getItemId() == R.id.setting) return mManager.change(1);
         return false;
+    }
+
+    @Override
+    public void onConfigurationChanged(@NonNull Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        RefreshEvent.video();
     }
 
     @Override
