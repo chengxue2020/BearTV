@@ -1,0 +1,135 @@
+name: Auto Build upsteam
+
+on:
+  schedule:
+    - cron: 35 0-18 * * *
+  workflow_dispatch:
+
+
+env:
+  userName: FongMi
+  repoName: TV
+  branchName: release
+  appName: AlphaTV
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      commit: ${{ env.commit }}
+      tag: ${{ env.tag }}
+      ESCAPED: ${{ env.ESCAPED }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Check New Commit
+        run: |
+          upStream=https://github.com/${{ env.userName }}/${{ env.repoName }}
+          echo "upStream=$upStream" >> $GITHUB_ENV
+          commit=$(curl -sL $upStream/commits/${{ env.branchName }} |grep -o "/${{ env.userName }}/${{ env.repoName }}/commit/[a-z0-9]\+" |head -1 | cut -d\/ -f5)
+          if ! git log --oneline |grep -q "$commit"; then
+            echo "commit=$commit" >> $GITHUB_ENV
+            echo "commitS=${commit:0:7}" >> $GITHUB_ENV
+            lastCommit=`git log --oneline |grep -o '[a-z0-9]\{40\}' |head -1`
+            echo "lastCommit=$lastCommit" >> $GITHUB_ENV
+            echo "lastCommitS=${lastCommit:0:7}" >> $GITHUB_ENV
+          fi
+      - name: Checkout Source Code
+        if: ${{ env.commit }}
+        run: |
+          git clone ${{ env.upStream }} ${{ env.repoName }}
+          cd ${{ env.repoName }}
+          git checkout ${{ env.commit }}
+          #zip
+          zip -q -x ".git/*" -r ${{ env.commitS }}-source.zip .
+          #tag
+          tag="$(git log --date=format:'%Y%m%d-%H%M' --pretty=format:%cd ${{ env.commitS }} -1)"
+          echo "tag=$tag" >> $GITHUB_ENV
+      - name: Release Changelog
+        if: ${{ env.commit }}
+        working-directory: ${{ env.repoName }}
+        run: |
+          export LESSCHARSET=utf-8
+          if [ "${{ env.commit }}" == "${{ env.lastCommit }}" ]; then
+            COMMIT_MESSAGE="$(python3 -c "import urllib.parse, sys; print(urllib.parse.quote(sys.argv[1]))"  "`git log --pretty=format:%B ${{ env.commitS }} -1 |sed -e 's# \{2,\}#\n#g' -e '/^Merge pull/d' -e 's#"#\\"#g' -e '/^$/d' |cat -n |sort -k2,2 -k1,1n |uniq -f1 |sort -k1,1n |cut -f2- `")"
+          else
+            COMMIT_MESSAGE="$(python3 -c "import urllib.parse, sys; print(urllib.parse.quote(sys.argv[1]))"  "`git log --pretty=format:%B ${{ env.commitS }}...${{ env.lastCommit }} |sed -e 's# \{2,\}#\n#g' -e '/^Merge pull/d' -e 's#"#\\"#g' -e '/^$/d' |cat -n |sort -k2,2 -k1,1n |uniq -f1 |sort -k1,1n |cut -f2- `")"
+          fi
+          if [ ${#COMMIT_MESSAGE} -gt 0 ] && [ ${#COMMIT_MESSAGE} -le 1024 ]; then
+            ESCAPED=$(echo $COMMIT_MESSAGE |sed 's#%[eE]2[0-9a-zA-Z%]\{6\}##g')
+          else
+            COMMIT_URL=${{ env.upStream }}/commits/${{ env.branchName }}
+            ESCAPED="$(python3 -c "import urllib.parse, sys; print(urllib.parse.quote(sys.argv[1]))" "$COMMIT_URL")"
+          fi
+          echo "ESCAPED=$ESCAPED" >> $GITHUB_ENV
+      - name: Upload Sourcecode To Artifact
+        uses: actions/upload-artifact@v3
+        if: ${{ env.commit }}
+        with:
+          name: ${{ env.tag }}-source
+          path: ${{ env.repoName }}/*-source.zip
+
+  build:
+    needs: prepare
+    if: needs.prepare.outputs.tag
+    strategy:
+      matrix:
+        product: [ leanback, mobile ]
+      fail-fast: false
+    runs-on: ubuntu-latest
+    env:
+      product: ${{ matrix.product }}
+      tag: ${{ needs.prepare.outputs.tag }}
+    outputs:
+      buildResult: ${{ env.buildResult }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/download-artifact@v2
+      - name: Unzip Code
+        run: |
+          unzip -d source/ *-source/*-source.zip
+          rm -rf *-source/
+      - name: Release Apk Sign
+        working-directory: source/
+        run: |
+          signingConfigs='ICAgIHNpZ25pbmdDb25maWdzIHtcCiAgICAgICAgaWYgKHByb2plY3QuaGFzUHJvcGVydHkoIlJFTEVBU0VfU1RPUkVfRklMRSIpKSB7XAogICAgICAgICAgICBteUNvbmZpZyB7XAogICAgICAgICAgICAgICAgc3RvcmVGaWxlIGZpbGUoUkVMRUFTRV9TVE9SRV9GSUxFKVwKICAgICAgICAgICAgICAgIHN0b3JlUGFzc3dvcmQgUkVMRUFTRV9TVE9SRV9QQVNTV09SRFwKICAgICAgICAgICAgICAgIGtleUFsaWFzIFJFTEVBU0VfS0VZX0FMSUFTXAogICAgICAgICAgICAgICAga2V5UGFzc3dvcmQgUkVMRUFTRV9LRVlfUEFTU1dPUkRcCiAgICAgICAgICAgICAgICB2MVNpZ25pbmdFbmFibGVkIHRydWVcCiAgICAgICAgICAgICAgICB2MlNpZ25pbmdFbmFibGVkIHRydWVcCiAgICAgICAgICAgICAgICBlbmFibGVWM1NpZ25pbmcgPSB0cnVlXAogICAgICAgICAgICAgICAgZW5hYmxlVjRTaWduaW5nID0gdHJ1ZVwKICAgICAgICAgICAgfVwKICAgICAgICB9XAogICAgfVwKXA=='
+          signingConfig='ICAgICAgICAgICAgaWYgKHByb2plY3QuaGFzUHJvcGVydHkoIlJFTEVBU0VfU1RPUkVfRklMRSIpKSB7XAogICAgICAgICAgICAgICAgc2lnbmluZ0NvbmZpZyBzaWduaW5nQ29uZmlncy5teUNvbmZpZ1wKICAgICAgICAgICAgfVwK'
+          signingConfigs="$(echo "$signingConfigs" |base64 -d )"
+          signingConfig="$(echo "$signingConfig" |base64 -d )"
+          sed -i -e "/defaultConfig {/i\\$signingConfigs " -e "/defaultConfig {/i\\$lintOptions " -e "/debug {/a\\$signingConfig " -e "/release {/a\\$signingConfig " app/build.gradle
+          if ! grep -q 'lintOptions' app/build.gradle; then
+            lintOptions='ICAgIGxpbnRPcHRpb25zIHtcCiAgICAgICAgY2hlY2tSZWxlYXNlQnVpbGRzIGZhbHNlXAogICAgICAgIGFib3J0T25FcnJvciBmYWxzZVwKICAgIH1cClw='
+            lintOptions="$(echo "$lintOptions" |base64 -d )"
+            sed -i "/defaultConfig {/i\\$lintOptions " app/build.gradle
+          fi
+          cp -f ${{ github.workspace }}/.github/workflows/TVBoxOSC.jks app/TVBoxOSC.jks
+          sed -i '$a\RELEASE_STORE_FILE=./TVBoxOSC.jks'     ./gradle.properties
+          sed -i '$a\RELEASE_KEY_ALIAS=TVBoxOSC'            ./gradle.properties
+          sed -i '$a\RELEASE_STORE_PASSWORD=TVBoxOSC'       ./gradle.properties
+          sed -i '$a\RELEASE_KEY_PASSWORD=TVBoxOSC'         ./gradle.properties
+      - name: Build With Gradle
+        continue-on-error: true
+        working-directory: source/
+        run: |
+          chmod +x gradlew
+          ./gradlew assemble${{ env.product }}release --build-cache --parallel --daemon --warning-mode all --stacktrace
+      - name: Prepare App
+        run: |
+          mkdir -p apk/
+          for file in `find ~ -name "*.apk" -print`; do
+            mv "$file" apk/${{ env.appName }}_${{ env.product }}_${{ env.tag }}.apk
+            echo "buildResult=yes" >> $GITHUB_ENV
+          done
+      - name: Release and Upload Assets
+        uses: softprops/action-gh-release@v1
+        with:
+          name: ${{ env.tag }}
+          tag_name: ${{ env.tag }}
+          body: ${{ env.commit }}
+          files: |
+            apk/*.apk
+            apk/*-source.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
